@@ -1,379 +1,151 @@
-    <div id="fixturesWrap"></div>
-    </div>
-
-    <div class="card">
-      <h3 style="margin:0;color:var(--gold)">JSON Preview (will be pushed)</h3>
-      <div class="small">Review before publishing. Publishing will update <code>data.json</code> in your repo's main branch.</div>
-      <textarea id="jsonPreview" rows="10" style="background:#0a0a0a;color:var(--muted)"></textarea>
-    </div>
-  </div>
-
-</div>
-
-<script>
-/* ---------- CONFIG (edit only the token line) ---------- */
-const REPO_OWNER = 'rowlandmayowa527-ai';
-const REPO_NAME = 'pfl-livescore-center';
-const FILE_PATH = 'data.json';
-const BRANCH = 'main';
-const GITHUB_TOKEN = 'PASTE_YOUR_TOKEN_HERE'; // <-- Paste your PAT here (keep private)
-
-/* ---------- password (local) ---------- */
-const ADMIN_PW = 'Rowland12#';
-
-/* ---------- helpers ---------- */
-function showOp(msg, ok=true){
-  const el = document.getElementById('opMsg'); el.style.display='block'; el.textContent=msg; el.className = 'status ' + (ok? 'ok':'err');
-  setTimeout(()=>el.style.display='none',3000);
-}
-function uid(){ return 'm'+Date.now().toString(36); }
-function b64enc(s){ return btoa(unescape(encodeURIComponent(s))); }
-function b64dec(s){ return decodeURIComponent(escape(atob(s))); }
-
-/* ---------- model ---------- */
-let model = null;
-
-/* fetch remote */
-async function loadRemote(){
-  try{
-    const r = await fetch(`https://raw.githubusercontent.com/${REPO_OWNER}/${REPO_NAME}/${BRANCH}/${FILE_PATH}?cachebust=${Date.now()}`);
-    if(!r.ok) throw new Error('No remote');
-    model = await r.json();
-    renderAll();
-    showOp('Loaded remote data.json');
-  }catch(e){
-    console.warn(e);
-    model = { meta:{competition:'Pinnacle Football League',organiser:'Arcane Override Games',updatedAt:new Date().toISOString()}, live:null, fixtures:[], archive:[], predictions:[], comments:[], players:{} };
-    renderAll();
-    showOp('Loaded default model (no remote)', false);
-  }
-}
-
-/* render */
-function renderAll(){
-  document.getElementById('jsonPreview').value = JSON.stringify(model, null, 2);
-  renderFixturesList();
-}
-
-/* fixtures list */
-function renderFixturesList(){
-  const wrap = document.getElementById('fixturesWrap');
-  const arr = (model.fixtures||[]).slice();
-  // sort: live first, then date/time
-  arr.sort((a,b)=>{
-    if(a.status==='live' && b.status!=='live') return -1;
-    if(b.status==='live' && a.status!=='live') return 1;
-    return new Date(a.date+' '+(a.time||'')) - new Date(b.date+' '+(b.time||''));
-  });
-  if(!arr.length){ wrap.innerHTML = '<div class="small">No fixtures</div>'; return; }
-  let html = '<table><thead><tr><th>Date</th><th>Fixture</th><th>Score</th><th>Venue</th><th>Status</th><th>Actions</th></tr></thead><tbody>';
-  for(const f of arr){
-    html += `<tr>
-      <td>${f.date} ${f.time||''}</td>
-      <td>${f.home} vs ${f.away}</td>
-      <td>
-        <select id="sA_${f.id}">${[0,1,2,3,4,5,6].map(n=>`<option ${n===f.homeScore? 'selected':''} value="${n}">${n}</option>`).join('')}</select>
-        -
-        <select id="sB_${f.id}">${[0,1,2,3,4,5,6].map(n=>`<option ${n===f.awayScore? 'selected':''} value="${n}">${n}</option>`).join('')}</select>
-      </td>
-      <td>${f.venue||''}</td>
-      <td id="st_${f.id}">${f.status}</td>
-      <td>
-        <button onclick="saveScore('${f.id}')" class="btnGold">Save</button>
-        <button onclick="toggleLive('${f.id}')" style="margin-left:8px" class="${f.status==='live'?'btnRed':''}">${f.status==='live'?'End':'Go Live'}</button>
-        <button onclick="loadToForm('${f.id}')" style="margin-left:8px">Edit</button>
-        <button onclick="deleteFixture('${f.id}')" style="margin-left:8px">Delete</button>
-      </td>
-    </tr>`;
-  }
-  html += '</tbody></table>';
-  wrap.innerHTML = html;
-}
-
-/* load selected fixture into form */
-function loadToForm(id){
-  const f = (model.fixtures||[]).find(x=>x.id===id);
-  if(!f) return alert('Not found');
-  document.getElementById('teamA').value = f.home;
-  document.getElementById('teamB').value = f.away;
-  document.getElementById('venue').value = f.venue || 'Mainbowl';
-  document.getElementById('mDate').value = f.date;
-  document.getElementById('mTime').value = f.time || '';
-  document.getElementById('scoreA').value = f.homeScore || 0;
-  document.getElementById('scoreB').value = f.awayScore || 0;
-  document.getElementById('statusSel').value = f.status || 'upcoming';
-  // mark selected by storing id on Save button
-  document.getElementById('btnSave').dataset.editId = f.id;
-  showOp('Loaded fixture into form for editing');
-}
-
-/* add fixture */
-document.getElementById('btnAdd').addEventListener('click', ()=>{
-  const home = document.getElementById('teamA').value.trim();
-  const away = document.getElementById('teamB').value.trim();
-  const venue = document.getElementById('venue').value;
-  const date = document.getElementById('mDate').value;
-  const time = document.getElementById('mTime').value;
-  if(!home || !away || !date) return alert('Team A, Team B and Date are required');
-  const f = { id: uid(), date, time, home, away, venue, status:document.getElementById('statusSel').value, homeScore:Number(document.getElementById('scoreA').value||0), awayScore:Number(document.getElementById('scoreB').value||0) };
-  model.fixtures = model.fixtures || [];
-  model.fixtures.push(f);
-  model.meta.updatedAt = new Date().toISOString();
-  renderAll();
-  showOp('Fixture added (remember to Publish)');
-});
-
-/* save selected edit */
-document.getElementById('btnSave').addEventListener('click', ()=>{
-  const id = document.getElementById('btnSave').dataset.editId;
-  if(!id) return showOp('No fixture selected to save', false);
-  const f = (model.fixtures||[]).find(x=>x.id===id);
-  if(!f) return showOp('fixture not found', false);
-  f.home = document.getElementById('teamA').value.trim();
-  f.away = document.getElementById('teamB').value.trim();
-  f.venue = document.getElementById('venue').value;
-  f.date = document.getElementById('mDate').value;
-  f.time = document.getElementById('mTime').value;
-  f.homeScore = Number(document.getElementById('scoreA').value||0);
-  f.awayScore = Number(document.getElementById('scoreB').value||0);
-  f.status = document.getElementById('statusSel').value;
-  model.meta.updatedAt = new Date().toISOString();
-  renderAll();
-  showOp('Fixture updated (remember to Publish)');
-  delete document.getElementById('btnSave').dataset.editId;
-});
-
-/* save score from table controls */
-function saveScore(id){
-  const f = (model.fixtures||[]).find(x=>x.id===id);
-  if(!f) return showOp('Fixture not found', false);
-  f.homeScore = Number(document.getElementById('sA_'+id).value||0);
-  f.awayScore = Number(document.getElementById('sB_'+id).value||0);
-  model.meta.updatedAt = new Date().toISOString();
-  renderAll();
-  showOp('Score saved in model. Publish to push to GitHub.');
-}
-
-/* delete*/
-function deleteFixture(id){
-  if(!confirm('Delete fixture?')) return;
-  model.fixtures = (model.fixtures||[]).filter(x=>x.id!==id);
-  model.meta.updatedAt = new Date().toISOString();
-  renderAll();
-  showOp('Fixture removed (remember to Publish)', true);
-}
-
-/* toggle live/ended */
-function toggleLive(id){
-  const f = (model.fixtures||[]).find(x=>x.id===id);
-  if(!f) return;
-  if(f.status === 'live'){
-    f.status = 'ended';
-    // push to archive
-    model.archive = model.archive || [];
-    model.archive.push({...f, endedAt:new Date().toISOString()});
-    model.live = null;
-  } else {
-    // end any other live
-    (model.fixtures||[]).forEach(x=>{ if(x.status==='live') x.status='ended'; });
-    f.status = 'live';
-    // set model.live
-    model.live = { id: f.id, home: f.home, away: f.away, homeScore: f.homeScore||0, awayScore: f.awayScore||0, timestamp: new Date().toISOString() };
-  }
-  model.meta.updatedAt = new Date().toISOString();
-  renderAll();
-  showOp('Live toggled (remember to Publish)', true);
-}
-
-/* --------- Publish to GitHub using token ---------- */
-document.getElementById('btnPublish').addEventListener('click', async ()=>{
-  if(!confirm('Publish current JSON to GitHub data.json? This will overwrite the file in your repo.')) return;
-  try{
-    const apiUrl = `https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/${FILE_PATH}`;
-    // get current file to obtain sha
-    const getRes = await fetch(apiUrl + `?ref=${BRANCH}`, { headers: { Authorization: `token ${GITHUB_TOKEN}` } });
-    let sha = null;
-    if(getRes.ok){
-      const data = await getRes.json();
-      sha = data.sha;
-    }
-    const content = JSON.stringify(model, null, 2);
-    const body = { message: `Update data.json — ${new Date().toISOString()}`, content: b64enc(content), branch: BRANCH };
-    if(sha) body.sha = sha;
-    const putRes = await fetch(apiUrl, {
-      method: 'PUT',
-      headers: { Authorization: `token ${GITHUB_TOKEN}`, 'Content-Type':'application/json' },
-      body: JSON.stringify(body)
-    });
-    if(putRes.ok){
-      showOp('Published to GitHub successfully', true);
-      // reload remote to reflect exact file
-      setTimeout(loadRemote, 1200);
-    } else {
-      const txt = await putRes.text();
-      showOp('Publish failed: ' + (txt.slice(0,200)), false);
-    }
-  }catch(e){
-    console.error(e);
-    showOp('Publish error: ' + e.message, false);
-  }
-});
-
-/* export (copy) */
-document.getElementById('btnExport').addEventListener('click', ()=>{
-  const txt = JSON.stringify(model, null, 2);
-  navigator.clipboard.writeText(txt).then(()=> showOp('JSON copied. Paste into GitHub → data.json → Commit', true), ()=> { document.getElementById('jsonPreview').value = txt; showOp('Could not auto-copy — JSON is in preview box', false); });
-});
-
-/* reload */
-document.getElementById('btnReload').addEventListener('click', loadRemote);
-
-/* login handling */
-document.getElementById('pwBtn').addEventListener('click', ()=>{
-  const v = document.getElementById('pw').value;
-  if(v === ADMIN_PW){
-    document.getElementById('loginCard').style.display='none';
-    document.getElementById('dashboard').style.display='block';
-    loadRemote();
-  } else {
-    const el = document.getElementById('loginMsg'); el.style.display='block'; el.textContent='Wrong password'; el.className='status err';
-    setTimeout(()=>el.style.display='none',2000);
-  }
-});
-
-/* initial */
-renderAll();
-</script>
-</body>
-</html>
 <!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>PFL Live Score Admin</title>
+<title>PFL Admin Panel</title>
 <style>
-  body { font-family: Arial, sans-serif; background: #000; color: #fff; }
-  h1 { color: gold; text-align: center; }
-  table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-  th, td { border: 1px solid #fff; padding: 8px; text-align: center; }
-  th { background: gold; color: black; }
-  select, input { padding: 5px; margin: 2px; width: 100%; }
-  button { padding: 10px; margin: 5px; background: gold; color: black; border: none; cursor: pointer; font-weight: bold; }
-  .live { background-color: red; color: white; }
+body { margin:0; font-family: Arial, sans-serif; background:#111; color:#fff; }
+header { background: gold; color:black; text-align:center; font-weight:bold; padding:15px;}
+.container {padding:10px; max-width:1200px; margin:auto;}
+.card {background:#222; border:1px solid gold; border-radius:8px; padding:10px; margin-bottom:10px;}
+label {display:block; margin-top:5px;}
+input, select {margin-top:3px; padding:5px; border-radius:4px; border:none; width:100%;}
+button {margin-top:10px; padding:10px; background:gold; color:black; border:none; border-radius:5px; cursor:pointer;}
+h2 {margin-top:20px;}
 </style>
 </head>
 <body>
+<header>PFL Admin Panel</header>
+<div class="container">
+<div id="loginDiv">
+  <h2>Admin Login</h2>
+  <label>Password:</label>
+  <input type="password" id="adminPassword" placeholder="Enter password">
+  <button onclick="login()">Login</button>
+</div>
 
-<h1>Pinnacle Football League - Admin Panel</h1>
+<div id="adminDiv" style="display:none;">
+  <h2>Update Matches</h2>
+  <label>Select Match Day:</label>
+  <select id="matchDaySelect"></select>
 
-<table id="matchTable">
-  <thead>
-    <tr>
-      <th>Match</th>
-      <th>Home Team</th>
-      <th>Away Team</th>
-      <th>Venue</th>
-      <th>Time</th>
-      <th>Home Score</th>
-      <th>Away Score</th>
-      <th>Live</th>
-    </tr>
-  </thead>
-  <tbody>
-    <!-- Matches will be injected here -->
-  </tbody>
-</table>
-
-<button onclick="saveUpdates()">Update Matches</button>
+  <div id="matchesContainer"></div>
+  <button onclick="saveData()">Save Updates</button>
+</div>
+</div>
 
 <script>
-const GITHUB_TOKEN = "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";
-const REPO_OWNER = "rowlandmayowa527-ai";
-const REPO_NAME = "pfl-livescore-center";
-const FILE_PATH = "data.json";
+const ADMIN_PASS = "Rowland12#";
+const GITHUB_REPO = "rowlandmayowa527-ai/pfl-livescore-center";
+const DATA_FILE = "data.json";
+const GITHUB_PAT = "YOUR_PERSONAL_ACCESS_TOKEN"; // replace with your own PAT
 
-// Example match data
-let matches = [
-  {id:1, home:"Blue Blazzers", away:"Dark Art FC", venue:"Mainbowl", time:"14:00", homeScore:0, awayScore:0, live:false},
-  {id:2, home:"Infinity FC", away:"Dynamos FC", venue:"Mainbowl", time:"15:00", homeScore:0, awayScore:0, live:false},
-  {id:3, home:"Shooting Stars", away:"FET 21/26", venue:"Mainbowl", time:"16:00", homeScore:0, awayScore:0, live:false},
-  {id:4, home:"Courage FC", away:"TBD", venue:"Mainbowl", time:"17:00", homeScore:0, awayScore:0, live:false}
-];
+let data = {};
 
-// Inject table rows
-function renderTable() {
-  const tbody = document.querySelector("#matchTable tbody");
-  tbody.innerHTML = "";
-  matches.forEach(match => {
-    const row = document.createElement("tr");
-    row.innerHTML = `
-      <td>${match.id}</td>
-      <td><input type="text" value="${match.home}" onchange="updateField(${match.id}, 'home', this.value)"></td>
-      <td><input type="text" value="${match.away}" onchange="updateField(${match.id}, 'away', this.value)"></td>
-      <td>
-        <select onchange="updateField(${match.id}, 'venue', this.value)">
-          <option value="Mainbowl" ${match.venue==="Mainbowl"?'selected':''}>Mainbowl</option>
-          <option value="Maracana" ${match.venue==="Maracana"?'selected':''}>Maracana</option>
-        </select>
-      </td>
-      <td><input type="time" value="${match.time}" onchange="updateField(${match.id}, 'time', this.value)"></td>
-      <td><input type="number" min="0" max="6" value="${match.homeScore}" onchange="updateField(${match.id}, 'homeScore', this.value)"></td>
-      <td><input type="number" min="0" max="6" value="${match.awayScore}" onchange="updateField(${match.id}, 'awayScore', this.value)"></td>
-      <td><button class="${match.live?'live':''}" onclick="toggleLive(${match.id}, this)">${match.live?'LIVE':'OFF'}</button></td>
+function login(){
+  const pass = document.getElementById("adminPassword").value;
+  if(pass===ADMIN_PASS){
+    document.getElementById("loginDiv").style.display="none";
+    document.getElementById("adminDiv").style.display="block";
+    loadData();
+  } else { alert("Incorrect password"); }
+}
+
+async function loadData(){
+  const res = await fetch(`https://raw.githubusercontent.com/${GITHUB_REPO}/main/${DATA_FILE}?t=${Date.now()}`);
+  data = await res.json();
+  populateMatchDays();
+}
+
+function populateMatchDays(){
+  const select = document.getElementById("matchDaySelect");
+  select.innerHTML="";
+  data.matchDays.forEach((day,i)=>{
+    const opt=document.createElement("option");
+    opt.value=i;
+    opt.text=`Match Day ${i+1} - ${day.date}`;
+    select.appendChild(opt);
+  });
+  select.onchange = renderMatches;
+  renderMatches();
+}
+
+function renderMatches(){
+  const idx = document.getElementById("matchDaySelect").value;
+  const container = document.getElementById("matchesContainer");
+  container.innerHTML="";
+  const matchDay = data.matchDays[idx];
+  matchDay.matches.forEach((m,i)=>{
+    const card = document.createElement("div");
+    card.className="card";
+    card.innerHTML=`
+      <label>Home Team:</label>
+      <select id="home-${i}">${data.teams.map(t=>`<option value="${t}" ${t===m.home?'selected':''}>${t}</option>`)}</select>
+
+      <label>Away Team:</label>
+      <select id="away-${i}">${data.teams.map(t=>`<option value="${t}" ${t===m.away?'selected':''}>${t}</option>`)}</select>
+
+      <label>Home Score:</label>
+      <input type="number" min="0" max="6" value="${m.homeScore!==null?m.homeScore:0}" id="hs-${i}">
+
+      <label>Away Score:</label>
+      <input type="number" min="0" max="6" value="${m.awayScore!==null?m.awayScore:0}" id="as-${i}">
+
+      <label>Venue:</label>
+      <select id="venue-${i}">
+        <option value="Mainbowl" ${m.venue==="Mainbowl"?'selected':''}>Mainbowl</option>
+        <option value="Maracana" ${m.venue==="Maracana"?'selected':''}>Maracana</option>
+      </select>
+
+      <label>Time:</label>
+      <input type="time" value="${m.time}" id="time-${i}">
+
+      <label>Live:</label>
+      <select id="live-${i}">
+        <option value="true" ${m.live?'selected':''}>Yes</option>
+        <option value="false" ${!m.live?'selected':''}>No</option>
+      </select>
     `;
-    tbody.appendChild(row);
+    container.appendChild(card);
   });
 }
 
-function updateField(id, field, value) {
-  const match = matches.find(m => m.id === id);
-  if (field === "homeScore" || field === "awayScore") value = parseInt(value);
-  match[field] = value;
+async function saveData(){
+  const idx = document.getElementById("matchDaySelect").value;
+  const matchDay = data.matchDays[idx];
+  matchDay.matches.forEach((m,i)=>{
+    m.home = document.getElementById(`home-${i}`).value;
+    m.away = document.getElementById(`away-${i}`).value;
+    m.homeScore = parseInt(document.getElementById(`hs-${i}`).value);
+    m.awayScore = parseInt(document.getElementById(`as-${i}`).value);
+    m.venue = document.getElementById(`venue-${i}`).value;
+    m.time = document.getElementById(`time-${i}`).value;
+    m.live = document.getElementById(`live-${i}`).value==="true";
+  });
+
+  // Push to GitHub
+  const content = btoa(unescape(encodeURIComponent(JSON.stringify(data,null,2))));
+  const shaRes = await fetch(`https://api.github.com/repos/${GITHUB_REPO}/contents/${DATA_FILE}`);
+  const shaData = await shaRes.json();
+  const sha = shaData.sha;
+
+  const res = await fetch(`https://api.github.com/repos/${GITHUB_REPO}/contents/${DATA_FILE}`,{
+    method:"PUT",
+    headers:{
+      "Authorization": `token ${GITHUB_PAT}`,
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({
+      message: "Update via Admin Panel",
+      content,
+      sha
+    })
+  });
+
+  if(res.ok){ alert("Data updated successfully!"); loadData(); }
+  else alert("Update failed!");
 }
-
-function toggleLive(id, btn) {
-  const match = matches.find(m => m.id === id);
-  match.live = !match.live;
-  btn.textContent = match.live ? 'LIVE' : 'OFF';
-  btn.className = match.live ? 'live' : '';
-}
-
-// GitHub API update
-async function saveUpdates() {
-  try {
-    // 1️⃣ Get current SHA of the file
-    const shaResp = await fetch(`https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/${FILE_PATH}`);
-    const shaData = await shaResp.json();
-    const sha = shaData.sha;
-
-    // 2️⃣ Push updated JSON
-    const response = await fetch(`https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/${FILE_PATH}`, {
-      method: 'PUT',
-      headers: {
-        'Authorization': `token ${GITHUB_TOKEN}`,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        message: "Update match data",
-        content: btoa(JSON.stringify(matches, null, 2)),
-        sha: sha
-      })
-    });
-
-    const result = await response.json();
-    if(result.content) alert("Matches updated successfully!");
-    else alert("Update failed. Check console.");
-    console.log(result);
-  } catch(e) {
-    console.error(e);
-    alert("Error updating matches.");
-  }
-}
-
-// Initial render
-renderTable();
 </script>
-
 </body>
 </html>
