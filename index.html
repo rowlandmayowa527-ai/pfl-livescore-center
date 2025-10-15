@@ -9,7 +9,7 @@
     .team { display:inline-block; width:45%; font-size: 1.8em; color: #fff; }
     .score { font-size: 4em; margin: 0 20px; color: gold; transition: color 0.5s; }
     .goal { color: red !important; }
-    .subs, .form, .ratings { font-size: 1em; margin-top: 10px; color: #ccc; }
+    .subs, .form, .ratings, .star { font-size: 1em; margin-top: 10px; color: #ccc; }
     textarea { width: 100%; padding:5px; margin-top:5px; }
     button { padding: 5px 10px; margin-top:5px; }
     pre { text-align:left; background:#111; padding:10px; overflow:auto; }
@@ -32,6 +32,7 @@
     <div class="subs" id="subs"></div>
     <div class="form" id="form"></div>
     <div class="ratings" id="ratings"></div>
+    <div class="star" id="starPlayer"></div>
 
     <audio id="goalSound" src="https://actions.google.com/sounds/v1/alarms/beep_short.ogg"></audio>
 
@@ -89,7 +90,9 @@
 <script>
 let lastHomeScore=0,lastAwayScore=0;
 
-// Load everything
+// Auto-refresh every 3 sec
+setInterval(loadAll,3000);
+
 function loadAll(){
   loadMatch();
   loadArchive();
@@ -109,6 +112,13 @@ function loadMatch(){
     document.getElementById('subs').innerHTML=match.subs.join('<br>');
     document.getElementById('form').innerHTML=`<strong>Form:</strong> ${match.homeTeam}:${match.homeForm} | ${match.awayTeam}:${match.awayForm}`;
     document.getElementById('ratings').innerHTML=`<strong>Player Ratings:</strong><br>${match.homeRatings.join(', ')}<br>${match.awayRatings.join(', ')}`;
+
+    // Star player
+    const allRatings=[...match.homeRatings,...match.awayRatings];
+    let topPlayer=''; let topScore=-1;
+    allRatings.forEach(r=>{
+      const [name,score]=r.split('-'); if(Number(score)>topScore){topScore=Number(score); topPlayer=name;}})
+    document.getElementById('starPlayer').innerHTML=`⭐ Star Player: ${topPlayer} (${topScore})`;
 
     const homeScoreEl=document.getElementById('homeScore');
     const awayScoreEl=document.getElementById('awayScore');
@@ -154,10 +164,7 @@ function loadLeague(){
   const archive=JSON.parse(localStorage.getItem('matchArchive'))||[];
   const tableData={};
   archive.forEach(m=>{
-    [m.homeTeam,m.awayTeam].forEach(t=>{
-      if(!tableData[t]) tableData[t]={P:0,W:0,D:0,L:0,GF:0,GA:0,GD:0,Pts:0};
-    });
-    // Update stats
+    [m.homeTeam,m.awayTeam].forEach(t=>{if(!tableData[t]) tableData[t]={P:0,W:0,D:0,L:0,GF:0,GA:0,GD:0,Pts:0};});
     tableData[m.homeTeam].P++; tableData[m.awayTeam].P++;
     tableData[m.homeTeam].GF+=m.homeScore; tableData[m.homeTeam].GA+=m.awayScore;
     tableData[m.awayTeam].GF+=m.awayScore; tableData[m.awayTeam].GA+=m.homeScore;
@@ -167,107 +174,68 @@ function loadLeague(){
     else if(m.homeScore<m.awayScore){ tableData[m.awayTeam].W++; tableData[m.homeTeam].L++; tableData[m.awayTeam].Pts+=3; }
     else { tableData[m.homeTeam].D++; tableData[m.awayTeam].D++; tableData[m.homeTeam].Pts++; tableData[m.awayTeam].Pts++; }
   });
-  const tbody=document.querySelector('#leagueTable tbody');
-  tbody.innerHTML='';
+  const tbody=document.querySelector('#leagueTable tbody'); tbody.innerHTML='';
   Object.entries(tableData).sort((a,b)=>b[1].Pts-a[1].Pts).forEach(([team,stats])=>{
-    tbody.innerHTML+=`<tr>
-      <td>${team}</td><td>${stats.P}</td><td>${stats.W}</td><td>${stats.D}</td><td>${stats.L}</td>
-      <td>${stats.GF}</td><td>${stats.GA}</td><td>${stats.GD}</td><td>${stats.Pts}</td>
-    </tr>`;
+    tbody.innerHTML+=`<tr><td>${team}</td><td>${stats.P}</td><td>${stats.W}</td><td>${stats.D}</td><td>${stats.L}</td><td>${stats.GF}</td><td>${stats.GA}</td><td>${stats.GD}</td><td>${stats.Pts}</td></tr>`;
   });
 }
 
 // Next Fixtures
 function loadFixtures(){
   const fixtures=JSON.parse(localStorage.getItem('nextFixtures'))||[];
-  const fixtureDiv=document.getElementById('fixtureList');
-  fixtureDiv.innerHTML='';
+  const fixtureDiv=document.getElementById('fixtureList'); fixtureDiv.innerHTML='';
   fixtures.sort((a,b)=>new Date(a.date)-new Date(b.date)).forEach(f=>{
-    fixtureDiv.innerHTML+=`<div>${f.date}: ${f.home} vs ${f.aw      if(matchData) {
-        document.getElementById('homeTeam').innerText = matchData.homeTeam;
-        document.getElementById('awayTeam').innerText = matchData.awayTeam;
-        document.getElementById('subs').innerHTML = matchData.subs.join('<br>');
+    fixtureDiv.innerHTML+=`<div>${f.date}: ${f.home} vs ${f.away}</div>`;
+  });
+}
 
-        const homeScoreEl = document.getElementById('homeScore');
-        const awayScoreEl = document.getElementById('awayScore');
+// Stats Charts
+function loadCharts(){
+  const archive=JSON.parse(localStorage.getItem('matchArchive'))||[];
+  const teams={};
+  archive.forEach(m=>{
+    [m.homeTeam,m.awayTeam].forEach(t=>{if(!teams[t]) teams[t]={G:0,A:0,Y:0,R:0};});
+    teams[m.homeTeam].G+=m.homeStats[0]; teams[m.homeTeam].A+=m.homeStats[1]; teams[m.homeTeam].Y+=m.homeStats[2]; teams[m.homeTeam].R+=m.homeStats[3];
+    teams[m.awayTeam].G+=m.awayStats[0]; teams[m.awayTeam].A+=m.awayStats[1]; teams[m.awayTeam].Y+=m.awayStats[2]; teams[m.awayTeam].R+=m.awayStats[3];
+  });
+  let goalChart='Goals:\n',assistChart='Assists:\n',yellowChart='Yellow Cards:\n',redChart='Red Cards:\n';
+  Object.entries(teams).forEach(([t,v])=>{
+    goalChart+=`${t} ${'█'.repeat(v.G)} ${v.G}\n`;
+    assistChart+=`${t} ${'█'.repeat(v.A)} ${v.A}\n`;
+    yellowChart+=`${t} ${'█'.repeat(v.Y)} ${v.Y}\n`;
+    redChart+=`${t} ${'█'.repeat(v.R)} ${v.R}\n`;
+  });
+  document.getElementById('goalChart').innerText=goalChart;
+  document.getElementById('assistChart').innerText=assistChart;
+  document.getElementById('yellowChart').innerText=yellowChart;
+  document.getElementById('redChart').innerText=redChart;
+}
 
-        if(matchData.homeScore > lastHomeScore) flashGoal(homeScoreEl);
-        if(matchData.awayScore > lastAwayScore) flashGoal(awayScoreEl);
+// Comments
+function loadComments(){
+  const comments=JSON.parse(localStorage.getItem('comments'))||[];
+  const div=document.getElementById('commentList'); div.innerHTML='';
+  comments.forEach(c=>{div.innerHTML+=`<div>${c}</div>`;});
+}
+function submitComment(){
+  const input=document.getElementById('commentInput'); if(!input.value) return;
+  const comments=JSON.parse(localStorage.getItem('comments'))||[];
+  comments.push(input.value); localStorage.setItem('comments',JSON.stringify(comments)); input.value='';
+  loadComments();
+}
 
-        homeScoreEl.innerText = matchData.homeScore;
-        awayScoreEl.innerText = matchData.awayScore;
-
-        lastHomeScore = matchData.homeScore;
-        lastAwayScore = matchData.awayScore;
-      }
-
-      loadArchive();
-    }
-
-    function flashGoal(element) {
-      const sound = document.getElementById('goalSound');
-      sound.play();
-      element.classList.add('goal');
-      setTimeout(() => element.classList.remove('goal'), 1000);
-    }
-
-    function loadArchive() {
-      const archive = JSON.parse(localStorage.getItem('matchArchive')) || [];
-      const archiveDiv = document.getElementById('archive');
-      archiveDiv.innerHTML = '';
-
-      archive.sort((a,b) => new Date(b.timestamp) - new Date(a.timestamp));
-
-      archive.forEach(match => {
-        archiveDiv.innerHTML += `
-          <div>
-            <strong>${match.homeTeam} ${match.homeScore} : ${match.awayScore} ${match.awayTeam}</strong><br>
-            <small>${match.subs.join(', ')}</small>
-            <hr>
-          </div>
-        `;
-      });
-    }
-
-    loadMatch();
-    setInterval(loadMatch, 3000);
-  </script>
-</body>
-</html>  <div>
-    <div class="title">Pinnacle Football League — LiveScore</div>
-    <div class="subtitle">Powered by Arcane Override Games (AOG)</div>
-  </div>
-  <div style="margin-left:auto;"><img id="aogRepoLogo" class="logo" src="aog-logo.png" alt="AOG logo" style="width:48px;height:48px;"></div>
-</header>
-
-<main class="wrap">
-  <div class="card">
-    <div class="controls">
-      <div class="meta">Live matches are highlighted. Past results remain accessible.</div>
-      <div><a href="admin.html" style="color:var(--gold); font-weight:700; text-decoration:none;">Admin panel</a></div>
-    </div>
-
-    <div class="fixture-list card" id="fixturesRoot">
-      <!-- matches inserted here -->
-      <div class="muted">Loading matches…</div>
-    </div>
-  </div>
-</main>
-
-<footer>© <strong>Arcane Override Games</strong> — Pinnacle Football League</footer>
-
-<script type="module">
-  import { listenMatches } from './firebase.js';
-
-  const fixturesRoot = document.getElementById('fixturesRoot');
-  const pflRepoLogo = document.getElementById('pflRepoLogo');
-  const aogRepoLogo = document.getElementById('aogRepoLogo');
-
-  // If you uploaded repo logos named exactly pfl-logo.png / aog-logo.png they'll show.
-  // Admin uploads replace per-match logos stored in DB.
-
-  function renderMatches(matches){
-    if(!matches.length){ fixturesRoot.innerHTML = '<div class="muted">No matches yet.</div>'; return; }
+// Predictions
+function loadPredictions(){
+  const preds=JSON.parse(localStorage.getItem('predictions'))||[];
+  const div=document.getElementById('predictionList'); div.innerHTML='';
+  const counts={home:0,draw:0,away:0};
+  preds.forEach(p=>{if(p==='Home Win') counts.home++; else if(p==='Draw') counts.draw++; else counts.away++;});
+  div.innerHTML=`Home Win: ${counts.home} | Draw: ${counts.draw} | Away Win: ${counts.away}`;
+}
+function submitPrediction(){
+  const sel=document.querySelector('input[name="prediction"]:checked');
+  if(!sel) return alert('Select an option'); const preds=JSON.parse(localStorage.getItem('predictions'))||[];
+  preds.push(sel.value); localStoragematches yet.</div>'; return; }
     // Sort: live first, then newest createdAt desc
     matches.sort((a,b)=>{
       if(a.status === 'live' && b.status !== 'live') return -1;
