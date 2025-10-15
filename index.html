@@ -1,40 +1,189 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>PFL Live Score</title>
+  <title>PFL Live Hub</title>
   <style>
-    body { font-family: sans-serif; background: #000; color: #fff; text-align:center; }
-    .team { display:inline-block; width:45%; font-size: 1.5em; }
-    .score { font-size: 3em; margin: 0 20px; color: gold; transition: color 0.5s; }
+    body { font-family: Arial, sans-serif; background: #000; color: #fff; text-align:center; margin:0; padding:0;}
+    h1, h2, h3 { color: gold; margin: 10px 0; }
+    #liveMatch, #comments, #predictions, #archive, #fixtures, #league, #charts { padding: 20px; border-bottom: 2px solid #444; }
+    .team { display:inline-block; width:45%; font-size: 1.8em; color: #fff; }
+    .score { font-size: 4em; margin: 0 20px; color: gold; transition: color 0.5s; }
     .goal { color: red !important; }
-    .subs { font-size: 1em; margin-top: 10px; color: #ccc; }
-    hr { border-color: #444; margin: 20px 0; }
+    .subs, .form, .ratings { font-size: 1em; margin-top: 10px; color: #ccc; }
+    textarea { width: 100%; padding:5px; margin-top:5px; }
+    button { padding: 5px 10px; margin-top:5px; }
+    pre { text-align:left; background:#111; padding:10px; overflow:auto; }
+    table { margin:auto; border-collapse: collapse; width:90%; color:#fff; }
+    th, td { border: 1px solid #444; padding:5px; }
+    th { color: gold; }
   </style>
 </head>
 <body>
   <h1>🏆 Pinnacle Football League</h1>
 
+  <!-- Live Match -->
   <div id="liveMatch">
     <div class="team" id="homeTeam"></div>
     <span class="score" id="homeScore">0</span>
     <span class="score">:</span>
     <span class="score" id="awayScore">0</span>
     <div class="team" id="awayTeam"></div>
+
     <div class="subs" id="subs"></div>
+    <div class="form" id="form"></div>
+    <div class="ratings" id="ratings"></div>
+
+    <audio id="goalSound" src="https://actions.google.com/sounds/v1/alarms/beep_short.ogg"></audio>
+
+    <!-- Predictions -->
+    <div id="predictions">
+      <h3>Predict the Result:</h3>
+      <label><input type="radio" name="prediction" value="Home Win"> Home Win</label>
+      <label><input type="radio" name="prediction" value="Draw"> Draw</label>
+      <label><input type="radio" name="prediction" value="Away Win"> Away Win</label>
+      <button onclick="submitPrediction()">Submit</button>
+      <div id="predictionList"></div>
+    </div>
+
+    <!-- Comments -->
+    <div id="comments">
+      <h3>Fan Comments:</h3>
+      <textarea id="commentInput" rows="3" placeholder="Type your comment..."></textarea>
+      <button onclick="submitComment()">Submit</button>
+      <div id="commentList"></div>
+    </div>
   </div>
 
-  <h2>Previous Matches</h2>
-  <div id="archive"></div>
+  <!-- Next Fixtures -->
+  <div id="fixtures">
+    <h2>Next Fixtures</h2>
+    <div id="fixtureList"></div>
+  </div>
 
-  <audio id="goalSound" src="https://actions.google.com/sounds/v1/alarms/beep_short.ogg"></audio>
+  <!-- League Table -->
+  <div id="league">
+    <h2>League Table</h2>
+    <table id="leagueTable">
+      <thead>
+        <tr><th>Team</th><th>P</th><th>W</th><th>D</th><th>L</th><th>GF</th><th>GA</th><th>GD</th><th>Pts</th></tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </div>
 
-  <script>
-    let lastHomeScore = 0;
-    let lastAwayScore = 0;
+  <!-- Stats Charts -->
+  <div id="charts">
+    <h2>Stats Charts (History)</h2>
+    <pre id="goalChart"></pre>
+    <pre id="assistChart"></pre>
+    <pre id="yellowChart"></pre>
+    <pre id="redChart"></pre>
+  </div>
 
-    function loadMatch() {
-      const matchData = JSON.parse(localStorage.getItem('currentMatch'));
-      if(matchData) {
+  <!-- Previous Matches -->
+  <div id="archive">
+    <h2>Previous Matches</h2>
+    <div id="archiveList"></div>
+  </div>
+
+<script>
+let lastHomeScore=0,lastAwayScore=0;
+
+// Load everything
+function loadAll(){
+  loadMatch();
+  loadArchive();
+  loadLeague();
+  loadFixtures();
+  loadCharts();
+  loadComments();
+  loadPredictions();
+}
+
+// Load Live Match
+function loadMatch(){
+  const match=JSON.parse(localStorage.getItem('currentMatch'));
+  if(match){
+    document.getElementById('homeTeam').innerText=match.homeTeam;
+    document.getElementById('awayTeam').innerText=match.awayTeam;
+    document.getElementById('subs').innerHTML=match.subs.join('<br>');
+    document.getElementById('form').innerHTML=`<strong>Form:</strong> ${match.homeTeam}:${match.homeForm} | ${match.awayTeam}:${match.awayForm}`;
+    document.getElementById('ratings').innerHTML=`<strong>Player Ratings:</strong><br>${match.homeRatings.join(', ')}<br>${match.awayRatings.join(', ')}`;
+
+    const homeScoreEl=document.getElementById('homeScore');
+    const awayScoreEl=document.getElementById('awayScore');
+
+    if(match.homeScore>lastHomeScore) flashGoal(homeScoreEl);
+    if(match.awayScore>lastAwayScore) flashGoal(awayScoreEl);
+
+    homeScoreEl.innerText=match.homeScore;
+    awayScoreEl.innerText=match.awayScore;
+
+    lastHomeScore=match.homeScore;
+    lastAwayScore=match.awayScore;
+  }
+}
+
+// Flash Goal
+function flashGoal(el){
+  document.getElementById('goalSound').play();
+  el.classList.add('goal');
+  setTimeout(()=>el.classList.remove('goal'),1000);
+}
+
+// Load Previous Matches
+function loadArchive(){
+  const archive=JSON.parse(localStorage.getItem('matchArchive'))||[];
+  const archiveDiv=document.getElementById('archiveList');
+  archiveDiv.innerHTML='';
+  archive.sort((a,b)=>new Date(b.timestamp)-new Date(a.timestamp));
+  archive.forEach(m=>{
+    archiveDiv.innerHTML+=`<div>
+      <strong>${m.homeTeam} ${m.homeScore}:${m.awayScore} ${m.awayTeam}</strong><br>
+      <small>Subs:${m.subs.join(', ')}</small><br>
+      <small>Form:${m.homeTeam}:${m.homeForm} | ${m.awayTeam}:${m.awayForm}</small><br>
+      <small>Ratings:${m.homeRatings.join(', ')} | ${m.awayRatings.join(', ')}</small><br>
+      <small>Stats: Goals/Assists/Yellow/Red - ${m.homeStats.join('/')} | ${m.awayStats.join('/')}</small>
+      <hr>
+    </div>`;
+  });
+}
+
+// League Table
+function loadLeague(){
+  const archive=JSON.parse(localStorage.getItem('matchArchive'))||[];
+  const tableData={};
+  archive.forEach(m=>{
+    [m.homeTeam,m.awayTeam].forEach(t=>{
+      if(!tableData[t]) tableData[t]={P:0,W:0,D:0,L:0,GF:0,GA:0,GD:0,Pts:0};
+    });
+    // Update stats
+    tableData[m.homeTeam].P++; tableData[m.awayTeam].P++;
+    tableData[m.homeTeam].GF+=m.homeScore; tableData[m.homeTeam].GA+=m.awayScore;
+    tableData[m.awayTeam].GF+=m.awayScore; tableData[m.awayTeam].GA+=m.homeScore;
+    tableData[m.homeTeam].GD=tableData[m.homeTeam].GF-tableData[m.homeTeam].GA;
+    tableData[m.awayTeam].GD=tableData[m.awayTeam].GF-tableData[m.awayTeam].GA;
+    if(m.homeScore>m.awayScore){ tableData[m.homeTeam].W++; tableData[m.awayTeam].L++; tableData[m.homeTeam].Pts+=3; }
+    else if(m.homeScore<m.awayScore){ tableData[m.awayTeam].W++; tableData[m.homeTeam].L++; tableData[m.awayTeam].Pts+=3; }
+    else { tableData[m.homeTeam].D++; tableData[m.awayTeam].D++; tableData[m.homeTeam].Pts++; tableData[m.awayTeam].Pts++; }
+  });
+  const tbody=document.querySelector('#leagueTable tbody');
+  tbody.innerHTML='';
+  Object.entries(tableData).sort((a,b)=>b[1].Pts-a[1].Pts).forEach(([team,stats])=>{
+    tbody.innerHTML+=`<tr>
+      <td>${team}</td><td>${stats.P}</td><td>${stats.W}</td><td>${stats.D}</td><td>${stats.L}</td>
+      <td>${stats.GF}</td><td>${stats.GA}</td><td>${stats.GD}</td><td>${stats.Pts}</td>
+    </tr>`;
+  });
+}
+
+// Next Fixtures
+function loadFixtures(){
+  const fixtures=JSON.parse(localStorage.getItem('nextFixtures'))||[];
+  const fixtureDiv=document.getElementById('fixtureList');
+  fixtureDiv.innerHTML='';
+  fixtures.sort((a,b)=>new Date(a.date)-new Date(b.date)).forEach(f=>{
+    fixtureDiv.innerHTML+=`<div>${f.date}: ${f.home} vs ${f.aw      if(matchData) {
         document.getElementById('homeTeam').innerText = matchData.homeTeam;
         document.getElementById('awayTeam').innerText = matchData.awayTeam;
         document.getElementById('subs').innerHTML = matchData.subs.join('<br>');
