@@ -1,24 +1,13 @@
 {
   "matches": [
     {
-      "match_id": 1,
-      "home_team": "Blue Blazzers",
-      "away_team": "Dark Art",
-      "date": "2025-10-28",
-      "stage": "League Phase",
+      "teamA": "Blue Blazzers",
+      "teamB": "Dark Art FC",
       "venue": "Mainbowl",
-      "time": "4:00 PM",
-      "score": "—"
-    },
-    {
-      "match_id": 2,
-      "home_team": "Infinity FC",
-      "away_team": "Petalonix FC",
-      "date": "2025-10-30",
-      "stage": "League Phase",
-      "venue": "Mainbowl",
-      "time": "4:00 PM",
-      "score": "—"
+      "time": "2025-10-28T14:00",
+      "scoreA": 0,
+      "scoreB": 0,
+      "status": "Upcoming"
     }
   ]
 }
