@@ -1,22 +1,21 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>PFL Admin Panel</title>
+  <title>PFL Admin Panel - Round 1</title>
   <style>
     body { font-family: sans-serif; background:#000; color:#fff; padding:20px;}
-    input, button, textarea { width:100%; margin:5px 0; padding:8px; }
+    input, button, textarea, select { width:100%; margin:5px 0; padding:8px; }
     label { margin-top:10px; display:block; }
-    h2 { color: gold; }
+    h2, h3 { color: gold; }
+    hr { border-color: #444; }
   </style>
 </head>
 <body>
-  <h2>PFL Admin Panel</h2>
+  <h2>PFL Admin Panel - Round 1</h2>
 
-  <label>Home Team Name:</label>
-  <input type="text" id="homeTeam">
-
-  <label>Away Team Name:</label>
-  <input type="text" id="awayTeam">
+  <h3>Live Match Input</h3>
+  <label>Select Match:</label>
+  <select id="matchSelect"></select>
 
   <label>Home Score:</label>
   <input type="number" id="homeScore" value="0">
@@ -35,6 +34,76 @@
 
   <label>Home Player Ratings (Player1-8,Player2-7,...):</label>
   <input type="text" id="homeRatings">
+
+  <label>Away Player Ratings:</label>
+  <input type="text" id="awayRatings">
+
+  <label>Home Goals / Assists / Yellow Cards / Red Cards (format: goals,assists,yellow,red):</label>
+  <input type="text" id="homeStats">
+
+  <label>Away Goals / Assists / Yellow Cards / Red Cards:</label>
+  <input type="text" id="awayStats">
+
+  <h3>Next Fixtures</h3>
+  <div id="fixturesContainer"></div>
+
+  <button onclick="saveMatch()">Save Match / Update Fixture</button>
+
+<script>
+// Round 1 Fixtures - 7 teams, 4 matches
+const round1Fixtures = [
+  { date: "2025-10-28", time: "14:00", home: "Blue Blazzers", away: "Dark Art FC", venue: "Mainbowl Stadium" },
+  { date: "2025-10-28", time: "15:00", home: "Infinity FC", away: "Dynamos FC", venue: "Mainbowl Stadium" },
+  { date: "2025-10-28", time: "16:00", home: "Shooting Stars", away: "FET 21/26", venue: "Mainbowl Stadium" },
+  { date: "2025-10-28", time: "17:00", home: "Courage FC", away: "TBD", venue: "Mainbowl Stadium" }
+];
+
+// Save fixtures to localStorage
+localStorage.setItem('nextFixtures', JSON.stringify(round1Fixtures));
+
+// Populate match select
+const matchSelect=document.getElementById('matchSelect');
+round1Fixtures.forEach((m,i)=>{
+  matchSelect.innerHTML+=`<option value="${i}">${m.home} vs ${m.away} - ${m.time}</option>`;
+});
+
+// Populate next fixtures container for display
+const fixturesContainer=document.getElementById('fixturesContainer');
+round1Fixtures.forEach(f=>{
+  fixturesContainer.innerHTML+=`<div>${f.date} | ${f.time} | ${f.home} vs ${f.away} | Venue: ${f.venue}</div><hr>`;
+});
+
+// Save match to localStorage
+function saveMatch(){
+  const idx=matchSelect.value;
+  const matchData={
+    homeTeam: round1Fixtures[idx].home,
+    awayTeam: round1Fixtures[idx].away,
+    homeScore: parseInt(document.getElementById('homeScore').value),
+    awayScore: parseInt(document.getElementById('awayScore').value),
+    subs: document.getElementById('subs').value.split('\n'),
+    homeForm: document.getElementById('homeForm').value,
+    awayForm: document.getElementById('awayForm').value,
+    homeRatings: document.getElementById('homeRatings').value.split(','),
+    awayRatings: document.getElementById('awayRatings').value.split(','),
+    homeStats: document.getElementById('homeStats').value.split(',').map(Number),
+    awayStats: document.getElementById('awayStats').value.split(',').map(Number),
+    timestamp: new Date().toISOString()
+  };
+
+  // Save current match
+  localStorage.setItem('currentMatch', JSON.stringify(matchData));
+
+  // Archive match
+  let archive=JSON.parse(localStorage.getItem('matchArchive'))||[];
+  archive.push(matchData);
+  localStorage.setItem('matchArchive', JSON.stringify(archive));
+
+  alert('Match and fixtures saved ✅');
+}
+</script>
+</body>
+</html>  <input type="text" id="homeRatings">
 
   <label>Away Player Ratings:</label>
   <input type="text" id="awayRatings">
