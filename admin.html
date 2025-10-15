@@ -12,29 +12,108 @@
       margin: 0;
       padding: 0;
     }
-
     header {
-      background-color: #d4af37;
-      color: #000;
+      background: linear-gradient(90deg, #000, #b8860b);
+      padding: 1rem;
       text-align: center;
-      padding: 1rem 0;
+      font-weight: 600;
       font-size: 1.5rem;
-      font-weight: bold;
       letter-spacing: 1px;
     }
-
     .container {
-      max-width: 900px;
+      max-width: 800px;
       margin: 2rem auto;
-      background-color: #111;
+      background: #111;
+      border: 1px solid #b8860b;
+      border-radius: 10px;
       padding: 2rem;
-      border-radius: 15px;
-      box-shadow: 0 0 15px #d4af37;
     }
-
-    label {
+    input, textarea, button {
+      width: 100%;
+      margin-bottom: 1rem;
+      padding: 10px;
+      border: none;
+      border-radius: 5px;
+      font-size: 1rem;
+    }
+    input, textarea {
+      background: #222;
+      color: #fff;
+    }
+    button {
+      background: #b8860b;
+      color: #000;
       font-weight: bold;
+      cursor: pointer;
+      transition: 0.3s;
+    }
+    button:hover {
+      background: #fff;
+      color: #b8860b;
+    }
+    .status {
+      text-align: center;
       margin-top: 1rem;
+      font-weight: 500;
+    }
+  </style>
+</head>
+<body>
+  <header>⚽ PFL LiveScore Admin Panel</header>
+  <div class="container">
+    <h2>Update Live Match Data</h2>
+    <input type="text" id="matchRound" placeholder="Round title (e.g., Round 1 - League Phase)" />
+    <textarea id="matchData" rows="10" placeholder='Paste JSON data here (matches, scores, etc.)'></textarea>
+    <button onclick="updateData()">Update Live Data</button>
+    <div class="status" id="status"></div>
+  </div>
+
+  <script>
+    const GITHUB_TOKEN = "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";  // 🔒 paste your new personal access token here
+    const REPO_OWNER = "rowlandmayowa527-ai";
+    const REPO_NAME = "pfl-livescore-center";
+    const FILE_PATH = "data.json";
+
+    async function updateData() {
+      const status = document.getElementById("status");
+      status.innerText = "Updating...";
+      const round = document.getElementById("matchRound").value.trim();
+      let jsonText = document.getElementById("matchData").value.trim();
+
+      try {
+        const parsed = JSON.parse(jsonText);
+        parsed.currentRound = round;
+        const newData = JSON.stringify(parsed, null, 2);
+        const getUrl = `https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/${FILE_PATH}`;
+        const res = await fetch(getUrl, { headers: { Authorization: `token ${GITHUB_TOKEN}` } });
+        const data = await res.json();
+        const sha = data.sha;
+
+        const updateRes = await fetch(getUrl, {
+          method: "PUT",
+          headers: {
+            Authorization: `token ${GITHUB_TOKEN}`,
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            message: "Updated live match data",
+            content: btoa(newData),
+            sha: sha
+          })
+        });
+
+        if (updateRes.ok) {
+          status.innerText = "✅ Update successful! Site will refresh shortly.";
+        } else {
+          status.innerText = "❌ Update failed! Check your token permissions or data format.";
+        }
+      } catch (e) {
+        status.innerText = "⚠️ Error: Invalid JSON format.";
+      }
+    }
+  </script>
+</body>
+</html>      margin-top: 1rem;
       display: block;
       color: #d4af37;
     }
