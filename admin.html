@@ -1,40 +1,59 @@
-<!-- admin.html -->
-<!doctype html>
-<html lang="en">
+<!DOCTYPE html>
+<html>
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>PFL Admin — Live Control</title>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;600;800&display=swap">
-<style>
-  :root{ --bg:#050405; --card:#0b0b0b; --gold:#d4af37; --muted:#bfc6cc; --white:#fff; }
-  body{ margin:0; font-family:Inter,system-ui,Arial; background: linear-gradient(180deg,#020202,#0a0a0a); color:var(--white); }
-  .wrap{ max-width:980px; margin:12px auto; padding:12px; display:grid; gap:12px; }
-  header{ display:flex; align-items:center; gap:12px; padding:12px 0; }
-  .card{ background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01)); padding:12px; border-radius:10px; border:1px solid rgba(255,255,255,0.03); }
-  input, textarea, select{ width:100%; padding:8px; border-radius:8px; border:1px solid rgba(255,255,255,0.04); background:transparent; color:var(--white); }
-  button{ padding:8px 10px; border-radius:8px; border:0; font-weight:700; cursor:pointer; }
-  .row{ display:flex; gap:8px; flex-wrap:wrap; }
-  .primary{ background:linear-gradient(90deg,var(--gold),#ffdf85); color:#111; }
-  .muted{ color:var(--muted); font-size:13px; }
-  .match-list{ display:flex; flex-direction:column; gap:8px; max-height:320px; overflow:auto; }
-  .match-item{ display:flex; justify-content:space-between; gap:8px; padding:8px; border-radius:8px; background:rgba(255,255,255,0.02); }
-  .small{ padding:6px 8px; border-radius:6px; background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.03); }
-</style>
+  <title>PFL Admin Panel</title>
+  <style>
+    body { font-family: sans-serif; padding: 20px; background: #000; color: #fff; }
+    input, button, textarea { margin: 5px 0; padding: 8px; width: 100%; }
+    label { margin-top: 10px; display: block; }
+  </style>
 </head>
 <body>
-<div class="wrap">
-  <header>
-    <div>
-      <div style="font-weight:800; font-size:18px;">Pinnacle Football League — Admin</div>
-      <div class="muted">Control live matches (password protected)</div>
-    </div>
-    <div style="margin-left:auto;"><a href="index.html" style="color:var(--gold); font-weight:700; text-decoration:none;">View public site</a></div>
-  </header>
+  <h2>PFL Live Match Admin</h2>
 
-  <div class="card">
-    <div style="margin-bottom:8px;" class="muted">Enter admin password to unlock controls</div>
-    <div class="row" style="align-items:center;">
+  <label>Home Team Name:</label>
+  <input type="text" id="homeTeam">
+
+  <label>Away Team Name:</label>
+  <input type="text" id="awayTeam">
+
+  <label>Home Score:</label>
+  <input type="number" id="homeScore" value="0">
+
+  <label>Away Score:</label>
+  <input type="number" id="awayScore" value="0">
+
+  <label>Substitutions / Notes (one per line, e.g., “Player1 -> Player2”):</label>
+  <textarea id="subs" rows="4"></textarea>
+
+  <button onclick="updateMatch()">Update Live Match</button>
+
+  <script>
+    function updateMatch() {
+      const matchData = {
+        homeTeam: document.getElementById('homeTeam').value,
+        awayTeam: document.getElementById('awayTeam').value,
+        homeScore: parseInt(document.getElementById('homeScore').value),
+        awayScore: parseInt(document.getElementById('awayScore').value),
+        subs: document.getElementById('subs').value.split('\n'), // array of substitutions
+        timestamp: new Date().toISOString()
+      };
+
+      // Save to current live match
+      localStorage.setItem('currentMatch', JSON.stringify(matchData));
+
+      // Archive match if it’s new
+      let archive = JSON.parse(localStorage.getItem('matchArchive')) || [];
+      // Remove previous match if timestamp is same
+      archive = archive.filter(m => m.timestamp !== matchData.timestamp);
+      archive.push(matchData);
+      localStorage.setItem('matchArchive', JSON.stringify(archive));
+
+      alert('Live match updated ✅');
+    }
+  </script>
+</body>
+</html>    <div class="row" style="align-items:center;">
       <input id="passInput" type="password" placeholder="Admin password" />
       <button id="unlockBtn" class="primary">Unlock</button>
     </div>
