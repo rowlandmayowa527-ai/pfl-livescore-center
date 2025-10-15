@@ -1,214 +1,188 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>PFL Admin — Publish to GitHub (optional)</title>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;600;800&display=swap" rel="stylesheet">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PFL Livescore Admin</title>
 <style>
-  :root{ --bg:#060606; --card:#0b0b0b; --gold:#d4af37; --muted:#bfc6cc; --white:#fff; }
-  *{box-sizing:border-box}
-  body{ margin:0; font-family:Inter,system-ui,Arial; background:var(--bg); color:var(--white); }
-  header{ padding:14px; border-bottom:1px solid rgba(255,255,255,0.03); display:flex; align-items:center; justify-content:space-between;}
-  header h1{ margin:0; color:var(--gold); font-size:18px; }
-  .wrap{ max-width:1100px; margin:12px auto; padding:12px; display:grid; gap:12px; }
-  .card{ background:linear-gradient(180deg, rgba(255,255,255,0.01), rgba(255,255,255,0.02)); padding:12px; border-radius:12px; border:1px solid rgba(255,255,255,0.03); }
-  label{ display:block; color:var(--muted); margin-top:8px; font-size:13px; }
-  input, select, textarea { width:100%; padding:8px; border-radius:8px; background:transparent; color:var(--white); border:1px solid rgba(255,255,255,0.04); }
-  .row{ display:flex; gap:8px; flex-wrap:wrap; margin-top:8px; }
-  .col{ flex:1; min-width:120px; }
-  button{ padding:8px 12px; border-radius:8px; border:0; cursor:pointer; font-weight:800; }
-  .btnGold{ background:linear-gradient(90deg,var(--gold),#ffd87a); color:#111; }
-  .btnGhost{ background:transparent; color:var(--white); border:1px solid rgba(255,255,255,0.04); }
-  .small{ color:var(--muted); font-size:13px; }
-  pre{ background:#0a0a0a; padding:10px; overflow:auto; max-height:260px; color:var(--muted); }
+  body { font-family: Arial, sans-serif; margin:0; background:#111; color:#fff; }
+  header { background:#ffd700; padding:1rem; text-align:center; color:#000; font-weight:bold; }
+  main { display:flex; }
+  nav { width:250px; background:#222; padding:1rem; height:100vh; }
+  nav button { display:block; width:100%; margin:0.5rem 0; padding:0.5rem; background:#333; color:#fff; border:none; cursor:pointer; text-align:left; }
+  section { flex:1; padding:1rem; }
+  input, select, textarea { width:100%; margin:0.3rem 0; padding:0.5rem; }
+  button.save { background:#ffd700; color:#000; border:none; padding:0.5rem 1rem; cursor:pointer; font-weight:bold; }
+  h2 { color:#ffd700; }
+  .match-card { background:#222; padding:1rem; margin:1rem 0; border-left:5px solid #ffd700; }
 </style>
 </head>
 <body>
-<header>
-  <div>
-    <h1>Pinnacle Football League — Admin</h1>
-    <div class="small">Arcane Override Games</div>
-  </div>
-  <div>
-    <button class="btnGhost" id="btnUnlock">Unlock (password)</button>
-  </div>
-</header>
 
-<div class="wrap">
+<header>Pinnacle Football League - Admin Panel</header>
+<main>
+  <nav>
+    <button onclick="showSection('matches')">Matches</button>
+    <button onclick="showSection('teams')">Teams & Players</button>
+    <button onclick="showSection('comments')">Fan Comments</button>
+  </nav>
+  <section id="content">
+    <!-- Dynamic content injected here -->
+  </section>
+</main>
 
-  <div class="card">
-    <h3 style="margin:0;color:var(--gold)">Repository / Data Settings</h3>
-    <label>GitHub Raw data URL</label>
-    <input id="rawUrl" value="https://raw.githubusercontent.com/rowlandmayowa527-ai/pfl-livescore-center/main/data.json">
-    <div class="small">Keep this pointing to your <code>data.json</code> raw path. The public index fetches from here.</div>
-    <label style="margin-top:8px">Repo details (for auto-publish)</label>
-    <div class="row">
-      <input id="ghOwner" class="col" placeholder="GitHub owner (username)" value="rowlandmayowa527-ai">
-      <input id="ghRepo" class="col" placeholder="Repo name" value="pfl-livescore-center">
-    </div>
-    <div class="row">
-      <input id="ghBranch" class="col" placeholder="Branch" value="main">
-      <input id="filePath" class="col" placeholder="File path" value="data.json">
-    </div>
-  </div>
+<script type="module">
+import { GITHUB_USERNAME, REPO_NAME, FILE_PATH, BRANCH, TOKEN } from './config.js';
 
-  <div class="card">
-    <h3 style="margin:0;color:var(--gold)">Quick: Round 1 Fixtures</h3>
-    <div class="small">You can edit fixtures below. Default Round 1 is preloaded.</div>
-    <label>Fixtures (one per line: date,time,home,away,venue)</label>
-    <textarea id="fixturesText" rows="4"></textarea>
-    <div style="margin-top:8px;"><button class="btnGold" id="btnLoadFixtures">Load into editor</button></div>
-  </div>
+let dataJson = { matches: [], teams: [], comments: [] };
 
-  <div class="card">
-    <h3 style="margin:0;color:var(--gold)">Live Match Editor</h3>
-    <div class="small">Choose a fixture then Set Live to publish it to <code>data.json</code>.</div>
-
-    <label>Select fixture</label>
-    <select id="selectFixture"></select>
-
-    <div class="row">
-      <div class="col">
-        <label>Home score</label>
-        <input id="homeScore" type="number" min="0" value="0">
-      </div>
-      <div class="col">
-        <label>Away score</label>
-        <input id="awayScore" type="number" min="0" value="0">
-      </div>
-    </div>
-
-    <label>Substitutions / Notes (one per line)</label>
-    <textarea id="liveSubs" rows="3"></textarea>
-
-    <label>Home ratings (Player-Score, comma separated)</label>
-    <input id="homeRatings" type="text">
-    <label>Away ratings</label>
-    <input id="awayRatings" type="text">
-
-    <div style="margin-top:10px;" class="row">
-      <button class="btnGold" id="btnSetLive">Set Live</button>
-      <button class="btnGhost" id="btnUpdateLive">Update Live</button>
-      <button class="btnGhost" id="btnEndAndArchive">End & Archive</button>
-    </div>
-  </div>
-
-  <div class="card">
-    <h3 style="margin:0;color:var(--gold)">Data JSON (preview / export / publish)</h3>
-    <div class="small">Edit locally, then Export or Publish to GitHub (optional token required).</div>
-    <pre id="jsonPreview">Loading data…</pre>
-    <div style="display:flex; gap:8px; margin-top:8px;">
-      <button class="btnGold" id="btnExport">Export JSON (copy)</button>
-      <button class="btnGhost" id="btnImport">Import JSON (paste)</button>
-      <button class="btnGhost" id="btnPublish">Publish to GitHub (optional)</button>
-    </div>
-    <div style="margin-top:8px;" class="small">If you publish, you'll be asked for a GitHub token (use a token you create & keep private). You can also update data.json manually in GitHub.</div>
-  </div>
-
-  <div class="card">
-    <h3 style="margin:0;color:var(--gold)">Archive & Helpers</h3>
-    <div class="small">Archive shows saved matches and allows lightweight editing.</div>
-    <div id="archivePreview" class="small">No archive loaded</div>
-  </div>
-
-</div>
-
-<script>
-/* Admin logic (no server required). Works with data.json in your repo. */
-/* Local edit model */
-let model = null;
-const DEFAULT_RAW = document.getElementById('rawUrl').value;
-
-/* helpers */
-function b64Encode(str){ return btoa(unescape(encodeURIComponent(str))); }
-function b64Decode(str){ return decodeURIComponent(escape(atob(str))); }
-
-/* load remote data.json preview */
-async function loadRemote(){
-  const url = document.getElementById('rawUrl').value.trim() || DEFAULT_RAW;
-  try{
-    const r = await fetch(url + '?cachebust=' + Date.now());
-    if(!r.ok) throw new Error('no remote data');
-    model = await r.json();
-  }catch(e){
-    // fall back to default if remote missing
-    if(!model) model = { meta:{competition:'Pinnacle Football League', organiser:'Arcane Override Games', updatedAt:new Date().toISOString()}, live:null, fixtures:[], archive:[], predictions:[], comments:[], players:{} };
-  }
-  refreshUI();
+async function fetchData() {
+  const res = await fetch(`https://raw.githubusercontent.com/${GITHUB_USERNAME}/${REPO_NAME}/${BRANCH}/${FILE_PATH}`);
+  dataJson = await res.json();
+  showMatches();
 }
 
-/* refresh UI from model */
-function refreshUI(){
-  document.getElementById('jsonPreview').innerText = JSON.stringify(model, null, 2);
-  // populate fixtures select and fixturesText
-  const sel = document.getElementById('selectFixture');
-  sel.innerHTML = '<option value="">-- pick --</option>';
-  document.getElementById('fixturesText').value = (model.fixtures||[]).map(f => `${f.date},${f.time},${f.home},${f.away},${f.venue}`).join('\\n');
-  (model.fixtures||[]).forEach((f,i)=> sel.innerHTML += `<option value="${i}">${f.date} ${f.time} • ${f.home} vs ${f.away}</option>`);
-  // archive preview
-  document.getElementById('archivePreview').innerText = (model.archive||[]).slice().reverse().map(m => `${m.homeTeam} ${m.homeScore}:${m.awayScore} ${m.awayTeam} (${m.timestamp})`).slice(0,10).join('\\n') || 'No archived matches';
-}
-
-/* load default remote on start */
-loadRemote();
-
-/* fixtures load button */
-document.getElementById('btnLoadFixtures').addEventListener('click', ()=>{
-  const lines = document.getElementById('fixturesText').value.trim().split('\\n').map(l=>l.trim()).filter(Boolean);
-  const arr = lines.map(line => {
-    const parts = line.split(',').map(s=>s.trim());
-    return { date: parts[0]||'', time: parts[1]||'', home: parts[2]||'', away: parts[3]||'', venue: parts[4]||'' };
+// Update data.json on GitHub
+async function updateDataJson() {
+  const res = await fetch(`https://api.github.com/repos/${GITHUB_USERNAME}/${REPO_NAME}/contents/${FILE_PATH}?ref=${BRANCH}`, {
+    headers: { Authorization: `token ${TOKEN}` }
   });
-  model.fixtures = arr;
-  model.meta.updatedAt = new Date().toISOString();
-  refreshUI();
-});
+  const fileData = await res.json();
+  const sha = fileData.sha;
 
-/* set live */
-document.getElementById('btnSetLive').addEventListener('click', ()=>{
-  const idx = document.getElementById('selectFixture').value;
-  if(idx === '') return alert('Pick a fixture');
-  const f = model.fixtures[idx];
-  if(!f) return alert('Missing fixture');
-  model.live = {
-    homeTeam: f.home,
-    awayTeam: f.away,
-    homeScore: Number(document.getElementById('homeScore').value||0),
-    awayScore: Number(document.getElementById('awayScore').value||0),
-    subs: (document.getElementById('liveSubs').value||'').split('\\n').filter(Boolean),
-    homeRatings: (document.getElementById('homeRatings').value||'').split(',').map(s=>s.trim()).filter(Boolean),
-    awayRatings: (document.getElementById('awayRatings').value||'').split(',').map(s=>s.trim()).filter(Boolean),
-    homeCoach: f.homeCoach || '',
-    awayCoach: f.awayCoach || '',
-    status: 'live',
-    timestamp: new Date().toISOString(),
-    fixtureId: f.id || null
-  };
-  model.meta.updatedAt = new Date().toISOString();
-  refreshUI();
-  alert('Live match set in editor. Use Publish to push to GitHub or Export to copy JSON.');
-});
+  const content = btoa(JSON.stringify(dataJson, null, 2));
 
-/* update live without changing fixture */
-document.getElementById('btnUpdateLive').addEventListener('click', ()=>{
-  if(!model.live) return alert('No live match set; use Set Live first.');
-  model.live.homeScore = Number(document.getElementById('homeScore').value||0);
-  model.live.awayScore = Number(document.getElementById('awayScore').value||0);
-  model.live.subs = (document.getElementById('liveSubs').value||'').split('\\n').filter(Boolean);
-  model.live.homeRatings = (document.getElementById('homeRatings').value||'').split(',').map(s=>s.trim()).filter(Boolean);
-  model.live.awayRatings = (document.getElementById('awayRatings').value||'').split(',').map(s=>s.trim()).filter(Boolean);
-  model.meta.updatedAt = new Date().toISOString();
-  refreshUI();
-  alert('Live updated locally.');
-});
+  const updateRes = await fetch(`https://api.github.com/repos/${GITHUB_USERNAME}/${REPO_NAME}/contents/${FILE_PATH}`, {
+    method: "PUT",
+    headers: { "Authorization": `token ${TOKEN}`, "Content-Type": "application/json" },
+    body: JSON.stringify({
+      message: "Update PFL data",
+      content: content,
+      sha: sha,
+      branch: BRANCH
+    })
+  });
 
-/* end & archive */
-document.getElementById('btnEndAndArchive').addEventListener('click', ()=>{
-  if(!model.live) return alert('No live match');
-  // add simple homeStats/awayStats placeholders if missing
-  if(!model.live.homeStats) model.live.homeStats = [model.live.homeScore||0,0,0,0];
-  if(!model.live.awayStats) model.live.awayStats = [model.live.awayScore||0,0,0,0];
+  const result = await updateRes.json();
+  console.log("Update result:", result);
+  alert("Data saved to GitHub!");
+}
+
+// Show sections
+function showSection(section) {
+  const content = document.getElementById('content');
+  if(section === 'matches') showMatches();
+  if(section === 'teams') showTeams();
+  if(section === 'comments') showComments();
+}
+
+// Matches section
+function showMatches() {
+  const content = document.getElementById('content');
+  content.innerHTML = '<h2>Matches</h2>';
+  dataJson.matches.forEach((match, i) => {
+    content.innerHTML += `
+      <div class="match-card">
+        <strong>Match ${i+1}:</strong> <input type="text" value="${match.teamA}" id="teamA${i}" placeholder="Team A"> vs 
+        <input type="text" value="${match.teamB}" id="teamB${i}" placeholder="Team B"><br>
+        Score: <input type="text" value="${match.score}" id="score${i}" placeholder="0-0"><br>
+        Events (JSON format): <textarea id="events${i}">${JSON.stringify(match.events)}</textarea><br>
+        <button class="save" onclick="saveMatch(${i})">Save Match</button>
+      </div>
+    `;
+  });
+  content.innerHTML += `<button class="save" onclick="addMatch()">+ Add Match</button>`;
+}
+
+// Save match
+function saveMatch(i) {
+  const teamA = document.getElementById(`teamA${i}`).value;
+  const teamB = document.getElementById(`teamB${i}`).value;
+  const score = document.getElementById(`score${i}`).value;
+  const events = JSON.parse(document.getElementById(`events${i}`).value || '[]');
+
+  dataJson.matches[i] = { teamA, teamB, score, events };
+  updateDataJson();
+}
+
+// Add new match
+function addMatch() {
+  dataJson.matches.push({ teamA:'', teamB:'', score:'0-0', events:[] });
+  showMatches();
+}
+
+// Teams section
+function showTeams() {
+  const content = document.getElementById('content');
+  content.innerHTML = '<h2>Teams & Players</h2>';
+  dataJson.teams.forEach((team, i) => {
+    content.innerHTML += `
+      <div class="match-card">
+        <strong>Team ${i+1}:</strong> <input type="text" value="${team.name}" id="teamName${i}" placeholder="Team Name"><br>
+        Players (JSON): <textarea id="players${i}">${JSON.stringify(team.players)}</textarea><br>
+        <button class="save" onclick="saveTeam(${i})">Save Team</button>
+      </div>
+    `;
+  });
+  content.innerHTML += `<button class="save" onclick="addTeam()">+ Add Team</button>`;
+}
+
+// Save team
+function saveTeam(i) {
+  const name = document.getElementById(`teamName${i}`).value;
+  const players = JSON.parse(document.getElementById(`players${i}`).value || '[]');
+  dataJson.teams[i] = { name, players };
+  updateDataJson();
+}
+
+// Add team
+function addTeam() {
+  dataJson.teams.push({ name:'', players:[] });
+  showTeams();
+}
+
+// Comments section
+function showComments() {
+  const content = document.getElementById('content');
+  content.innerHTML = '<h2>Fan Comments & Predictions</h2>';
+  dataJson.comments.forEach((comment, i) => {
+    content.innerHTML += `
+      <div class="match-card">
+        <input type="text" value="${comment.fan}" placeholder="Fan Name" id="fan${i}"><br>
+        <textarea id="text${i}">${comment.text}</textarea><br>
+        <select id="prediction${i}">
+          <option value="teamA" ${comment.prediction==='teamA'?'selected':''}>Team A Wins</option>
+          <option value="teamB" ${comment.prediction==='teamB'?'selected':''}>Team B Wins</option>
+          <option value="draw" ${comment.prediction==='draw'?'selected':''}>Draw</option>
+        </select><br>
+        <button class="save" onclick="saveComment(${i})">Save Comment</button>
+      </div>
+    `;
+  });
+  content.innerHTML += `<button class="save" onclick="addComment()">+ Add Comment</button>`;
+}
+
+// Save comment
+function saveComment(i) {
+  const fan = document.getElementById(`fan${i}`).value;
+  const text = document.getElementById(`text${i}`).value;
+  const prediction = document.getElementById(`prediction${i}`).value;
+  dataJson.comments[i] = { fan, text, prediction };
+  updateDataJson();
+}
+
+// Add comment
+function addComment() {
+  dataJson.comments.push({ fan:'', text:'', prediction:'draw' });
+  showComments();
+}
+
+// Initial fetch
+fetchData();
+</script>
+
+</body>
+</html>if(!model.live.awayStats) model.live.awayStats = [model.live.awayScore||0,0,0,0];
   model.archive = model.archive || [];
   model.archive.push(model.live);
   model.live = null;
