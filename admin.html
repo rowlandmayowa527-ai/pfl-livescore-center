@@ -1,827 +1,126 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>PFL LiveScore Admin Panel</title>
-  <style>
-    body {
-      font-family: "Poppins", sans-serif;
-      background-color: #000;
-      color: #fff;
-      margin: 0;
-      padding: 0;
-    }
-    header {
-      background: linear-gradient(90deg, #000, #b8860b);
-      padding: 1rem;
-      text-align: center;
-      font-weight: 600;
-      font-size: 1.5rem;
-      letter-spacing: 1px;
-    }
-    .container {
-      max-width: 800px;
-      margin: 2rem auto;
-      background: #111;
-      border: 1px solid #b8860b;
-      border-radius: 10px;
-      padding: 2rem;
-    }
-    input, textarea, button {
-      width: 100%;
-      margin-bottom: 1rem;
-      padding: 10px;
-      border: none;
-      border-radius: 5px;
-      font-size: 1rem;
-    }
-    input, textarea {
-      background: #222;
-      color: #fff;
-    }
-    button {
-      background: #b8860b;
-      color: #000;
-      font-weight: bold;
-      cursor: pointer;
-      transition: 0.3s;
-    }
-    button:hover {
-      background: #fff;
-      color: #b8860b;
-    }
-    .status {
-      text-align: center;
-      margin-top: 1rem;
-      font-weight: 500;
-    }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PFL Admin Dashboard</title>
+<style>
+  body { margin:0; font-family: Arial,sans-serif; background:#000; color:#fff; }
+  header { background:#111; padding:20px; text-align:center; color:#D4AF37; font-size:24px; font-weight:bold; }
+  .container { padding:20px; max-width:800px; margin:auto; }
+  label { display:block; margin-top:15px; font-weight:bold; }
+  input, select { width:100%; padding:10px; margin-top:5px; border-radius:5px; border:none; }
+  button { padding:10px 15px; margin-top:15px; border:none; border-radius:5px; font-weight:bold; cursor:pointer; }
+  #goLive { background:red; color:#fff; }
+  #saveBtn { background:#D4AF37; color:#000; }
+  .live-summary { margin-top:20px; padding:15px; background:#111; border-radius:5px; }
+  h3 { color:#D4AF37; margin-bottom:10px; }
+</style>
 </head>
 <body>
-  <header>⚽ PFL LiveScore Admin Panel</header>
-  <div class="container">
-    <h2>Update Live Match Data</h2>
-    <input type="text" id="matchRound" placeholder="Round title (e.g., Round 1 - League Phase)" />
-    <textarea id="matchData" rows="10" placeholder='Paste JSON data here (matches, scores, etc.)'></textarea>
-    <button onclick="updateData()">Update Live Data</button>
-    <div class="status" id="status"></div>
+<header>PFL Admin Dashboard</header>
+<div class="container">
+  
+  <label for="teamA">Team A:</label>
+  <input type="text" id="teamA" placeholder="Enter Team A name">
+  
+  <label for="teamB">Team B:</label>
+  <input type="text" id="teamB" placeholder="Enter Team B name">
+  
+  <label for="venue">Venue:</label>
+  <select id="venue">
+    <option value="Mainbowl">Mainbowl</option>
+    <option value="Maracana">Maracana</option>
+  </select>
+  
+  <label for="matchTime">Kick-off Date & Time:</label>
+  <input type="datetime-local" id="matchTime">
+  
+  <label for="scoreA">Team A Score (0-6):</label>
+  <input type="number" id="scoreA" min="0" max="6" value="0">
+  
+  <label for="scoreB">Team B Score (0-6):</label>
+  <input type="number" id="scoreB" min="0" max="6" value="0">
+  
+  <label for="status">Match Status:</label>
+  <select id="status">
+    <option value="upcoming">Upcoming</option>
+    <option value="live">Live</option>
+    <option value="ended">Ended</option>
+  </select>
+  
+  <button id="goLive" onclick="toggleLive()">Go Live</button>
+  <button id="saveBtn" onclick="saveData()">Save Update</button>
+  
+  <div class="live-summary" id="liveSummary">
+    <h3>Current Match Summary</h3>
+    <p id="summaryText">No match selected yet.</p>
   </div>
-
-  <script>
-    const GITHUB_TOKEN = "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";  // 🔒 paste your new personal access token here
-    const REPO_OWNER = "rowlandmayowa527-ai";
-    const REPO_NAME = "pfl-livescore-center";
-    const FILE_PATH = "data.json";
-
-    async function updateData() {
-      const status = document.getElementById("status");
-      status.innerText = "Updating...";
-      const round = document.getElementById("matchRound").value.trim();
-      let jsonText = document.getElementById("matchData").value.trim();
-
-      try {
-        const parsed = JSON.parse(jsonText);
-        parsed.currentRound = round;
-        const newData = JSON.stringify(parsed, null, 2);
-        const getUrl = `https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/${FILE_PATH}`;
-        const res = await fetch(getUrl, { headers: { Authorization: `token ${GITHUB_TOKEN}` } });
-        const data = await res.json();
-        const sha = data.sha;
-
-        const updateRes = await fetch(getUrl, {
-          method: "PUT",
-          headers: {
-            Authorization: `token ${GITHUB_TOKEN}`,
-            "Content-Type": "application/json"
-          },
-          body: JSON.stringify({
-            message: "Updated live match data",
-            content: btoa(newData),
-            sha: sha
-          })
-        });
-
-        if (updateRes.ok) {
-          status.innerText = "✅ Update successful! Site will refresh shortly.";
-        } else {
-          status.innerText = "❌ Update failed! Check your token permissions or data format.";
-        }
-      } catch (e) {
-        status.innerText = "⚠️ Error: Invalid JSON format.";
-      }
-    }
-  </script>
-</body>
-</html>      margin-top: 1rem;
-      display: block;
-      color: #d4af37;
-    }
-
-    input, textarea, select {
-      width: 100%;
-      padding: 10px;
-      margin-top: 5px;
-      border: none;
-      border-radius: 8px;
-      background: #222;
-      color: white;
-    }
-
-    textarea {
-      resize: vertical;
-    }
-
-    button {
-      background-color: #d4af37;
-      color: #000;
-      font-weight: bold;
-      border: none;
-      padding: 12px 20px;
-      margin-top: 15px;
-      border-radius: 8px;
-      cursor: pointer;
-      transition: 0.3s;
-    }
-
-    button:hover {
-      background-color: #fff;
-      color: #000;
-    }
-
-    .status {
-      margin-top: 1rem;
-      padding: 10px;
-      border-radius: 8px;
-      text-align: center;
-      font-weight: bold;
-    }
-
-    .success { background: #064e3b; color: #0f0; }
-    .error { background: #4b0f0f; color: #f00; }
-
-    footer {
-      text-align: center;
-      padding: 1rem;
-      color: #aaa;
-      font-size: 0.9rem;
-    }
-  </style>
-</head>
-<body>
-  <header>PFL LiveScore Admin Center ⚽</header>
-
-  <div class="container">
-    <label for="adminName">Admin Name</label>
-    <input type="text" id="adminName" placeholder="Enter your name" required>
-
-    <label for="matchData">Match Data (JSON Format)</label>
-    <textarea id="matchData" rows="15" placeholder='Paste or edit your match data here...'></textarea>
-
-    <label for="commitMessage">Commit Message</label>
-    <input type="text" id="commitMessage" placeholder="e.g., Updated Round 1 Results">
-
-    <button id="updateButton">Update Live Data</button>
-
-    <div id="statusBox" class="status"></div>
-  </div>
-
-  <footer>© 2025 Pinnacle Football League | Powered by Calculus</footer>
-
-  <script>
-    const button = document.getElementById('updateButton');
-    const statusBox = document.getElementById('statusBox');
-
-    button.addEventListener('click', async () => {
-      const adminName = document.getElementById('adminName').value.trim();
-      const matchData = document.getElementById('matchData').value.trim();
-      const commitMessage = document.getElementById('commitMessage').value.trim() || 'PFL data update';
-
-      if (!adminName || !matchData) {
-        statusBox.textContent = 'Please fill in all required fields.';
-        statusBox.className = 'status error';
-        return;
-      }
-
-      try {
-        const repo = 'pfl-livescore-center';
-        const owner = 'rowlandmayowa527-ai';
-        const token = 'YOUR_PERSONAL_ACCESS_TOKEN_HERE'; // 🟡 Replace this line only once!
-
-        const filePath = 'data.json';
-        const apiUrl = `https://api.github.com/repos/${owner}/${repo}/contents/${filePath}`;
-
-        const getRes = await fetch(apiUrl, {
-          headers: { Authorization: `token ${token}` }
-        });
-
-        const fileData = await getRes.json();
-        const sha = fileData.sha;
-
-        const updatedContent = btoa(unescape(encodeURIComponent(matchData)));
-
-        const res = await fetch(apiUrl, {
-          method: 'PUT',
-          headers: {
-            Authorization: `token ${token}`,
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({
-            message: `${commitMessage} by ${adminName}`,
-            content: updatedContent,
-            sha
-          })
-        });
-
-        if (res.ok) {
-          statusBox.textContent = '✅ Update successful! Site will refresh automatically in less than a minute.';
-          statusBox.className = 'status success';
-        } else {
-          throw new Error('Update failed.');
-        }
-      } catch (err) {
-        statusBox.textContent = '❌ Error: ' + err.message;
-        statusBox.className = 'status error';
-      }
-    });
-  </script>
-</body>
-</html>let dataJson = { matches: [], teams: [], comments: [] };
-
-async function fetchData() {
-  const res = await fetch(`https://raw.githubusercontent.com/${GITHUB_USERNAME}/${REPO_NAME}/${BRANCH}/${FILE_PATH}`);
-  dataJson = await res.json();
-  showMatches();
-}
-
-// Update data.json on GitHub
-async function updateDataJson() {
-  const res = await fetch(`https://api.github.com/repos/${GITHUB_USERNAME}/${REPO_NAME}/contents/${FILE_PATH}?ref=${BRANCH}`, {
-    headers: { Authorization: `token ${TOKEN}` }
-  });
-  const fileData = await res.json();
-  const sha = fileData.sha;
-
-  const content = btoa(JSON.stringify(dataJson, null, 2));
-
-  const updateRes = await fetch(`https://api.github.com/repos/${GITHUB_USERNAME}/${REPO_NAME}/contents/${FILE_PATH}`, {
-    method: "PUT",
-    headers: { "Authorization": `token ${TOKEN}`, "Content-Type": "application/json" },
-    body: JSON.stringify({
-      message: "Update PFL data",
-      content: content,
-      sha: sha,
-      branch: BRANCH
-    })
-  });
-
-  const result = await updateRes.json();
-  console.log("Update result:", result);
-  alert("Data saved to GitHub!");
-}
-
-// Show sections
-function showSection(section) {
-  const content = document.getElementById('content');
-  if(section === 'matches') showMatches();
-  if(section === 'teams') showTeams();
-  if(section === 'comments') showComments();
-}
-
-// Matches section
-function showMatches() {
-  const content = document.getElementById('content');
-  content.innerHTML = '<h2>Matches</h2>';
-  dataJson.matches.forEach((match, i) => {
-    content.innerHTML += `
-      <div class="match-card">
-        <strong>Match ${i+1}:</strong> <input type="text" value="${match.teamA}" id="teamA${i}" placeholder="Team A"> vs 
-        <input type="text" value="${match.teamB}" id="teamB${i}" placeholder="Team B"><br>
-        Score: <input type="text" value="${match.score}" id="score${i}" placeholder="0-0"><br>
-        Events (JSON format): <textarea id="events${i}">${JSON.stringify(match.events)}</textarea><br>
-        <button class="save" onclick="saveMatch(${i})">Save Match</button>
-      </div>
-    `;
-  });
-  content.innerHTML += `<button class="save" onclick="addMatch()">+ Add Match</button>`;
-}
-
-// Save match
-function saveMatch(i) {
-  const teamA = document.getElementById(`teamA${i}`).value;
-  const teamB = document.getElementById(`teamB${i}`).value;
-  const score = document.getElementById(`score${i}`).value;
-  const events = JSON.parse(document.getElementById(`events${i}`).value || '[]');
-
-  dataJson.matches[i] = { teamA, teamB, score, events };
-  updateDataJson();
-}
-
-// Add new match
-function addMatch() {
-  dataJson.matches.push({ teamA:'', teamB:'', score:'0-0', events:[] });
-  showMatches();
-}
-
-// Teams section
-function showTeams() {
-  const content = document.getElementById('content');
-  content.innerHTML = '<h2>Teams & Players</h2>';
-  dataJson.teams.forEach((team, i) => {
-    content.innerHTML += `
-      <div class="match-card">
-        <strong>Team ${i+1}:</strong> <input type="text" value="${team.name}" id="teamName${i}" placeholder="Team Name"><br>
-        Players (JSON): <textarea id="players${i}">${JSON.stringify(team.players)}</textarea><br>
-        <button class="save" onclick="saveTeam(${i})">Save Team</button>
-      </div>
-    `;
-  });
-  content.innerHTML += `<button class="save" onclick="addTeam()">+ Add Team</button>`;
-}
-
-// Save team
-function saveTeam(i) {
-  const name = document.getElementById(`teamName${i}`).value;
-  const players = JSON.parse(document.getElementById(`players${i}`).value || '[]');
-  dataJson.teams[i] = { name, players };
-  updateDataJson();
-}
-
-// Add team
-function addTeam() {
-  dataJson.teams.push({ name:'', players:[] });
-  showTeams();
-}
-
-// Comments section
-function showComments() {
-  const content = document.getElementById('content');
-  content.innerHTML = '<h2>Fan Comments & Predictions</h2>';
-  dataJson.comments.forEach((comment, i) => {
-    content.innerHTML += `
-      <div class="match-card">
-        <input type="text" value="${comment.fan}" placeholder="Fan Name" id="fan${i}"><br>
-        <textarea id="text${i}">${comment.text}</textarea><br>
-        <select id="prediction${i}">
-          <option value="teamA" ${comment.prediction==='teamA'?'selected':''}>Team A Wins</option>
-          <option value="teamB" ${comment.prediction==='teamB'?'selected':''}>Team B Wins</option>
-          <option value="draw" ${comment.prediction==='draw'?'selected':''}>Draw</option>
-        </select><br>
-        <button class="save" onclick="saveComment(${i})">Save Comment</button>
-      </div>
-    `;
-  });
-  content.innerHTML += `<button class="save" onclick="addComment()">+ Add Comment</button>`;
-}
-
-// Save comment
-function saveComment(i) {
-  const fan = document.getElementById(`fan${i}`).value;
-  const text = document.getElementById(`text${i}`).value;
-  const prediction = document.getElementById(`prediction${i}`).value;
-  dataJson.comments[i] = { fan, text, prediction };
-  updateDataJson();
-}
-
-// Add comment
-function addComment() {
-  dataJson.comments.push({ fan:'', text:'', prediction:'draw' });
-  showComments();
-}
-
-// Initial fetch
-fetchData();
-</script>
-
-</body>
-</html>if(!model.live.awayStats) model.live.awayStats = [model.live.awayScore||0,0,0,0];
-  model.archive = model.archive || [];
-  model.archive.push(model.live);
-  model.live = null;
-  model.meta.updatedAt = new Date().toISOString();
-  refreshUI();
-  alert('Match archived locally. Publish to push to GitHub if you want site to auto-update.');
-});
-
-/* export */
-document.getElementById('btnExport').addEventListener('click', ()=>{
-  const txt = JSON.stringify(model, null, 2);
-  navigator.clipboard.writeText(txt).then(()=> alert('JSON copied to clipboard — paste into GitHub data.json or share.'), ()=> {
-    // fallback: show in prompt
-    prompt('Copy JSON', txt);
-  });
-});
-
-/* import paste */
-document.getElementById('btnImport').addEventListener('click', ()=>{
-  const pasted = prompt('Paste JSON here to import (overwrites current editor data).');
-  if(!pasted) return;
-  try{
-    const obj = JSON.parse(pasted);
-    model = obj;
-    refreshUI();
-    alert('Imported.');
-  }catch(e){ alert('Invalid JSON'); }
-});
-
-/* Publish to GitHub (optional) */
-document.getElementById('btnPublish').addEventListener('click', async ()=>{
-  // ask for token
-  const token = prompt('Enter a GitHub Personal Access Token (repo scope). Leave empty to cancel.');
-  if(!token) return;
-  const owner = document.getElementById('ghOwner').value.trim();
-  const repo = document.getElementById('ghRepo').value.trim();
-  const branch = document.getElementById('ghBranch').value.trim() || 'main';
-  const path = document.getElementById('filePath').value.trim() || 'data.json';
-  if(!owner || !repo) return alert('Enter owner and repo.');
-
-  // fetch current file SHA (if exists)
-  const getUrl = `https://api.github.com/repos/${owner}/${repo}/contents/${path}`;
-  let sha = null;
-  try{
-    const res = await fetch(getUrl + `?ref=${branch}`, { headers: { Authorization: 'token ' + token } });
-    if(res.ok){
-      const j = await res.json();
-      sha = j.sha;
-    }
-  }catch(e){ console.error(e); }
-
-  const content = JSON.stringify(model, null, 2);
-  const body = { message: 'Update data.json via PFL admin', content: b64Encode(content), branch: branch };
-  if(sha) body.sha = sha;
-  const putRes = await fetch(getUrl, { method: 'PUT', headers: { Authorization: 'token ' + token, 'Content-Type':'application/json' }, body: JSON.stringify(body) });
-  if(putRes.ok){
-    alert('Published data.json to GitHub ✓');
-    // update rawUrl preview
-    loadRemote();
-  } else {
-    const err = await putRes.text();
-    alert('Publish failed: ' + err.slice(0,200));
-  }
-});
-
-/* unlock / simple password */
-document.getElementById('btnUnlock').addEventListener('click', ()=>{
-  const pw = prompt('Enter admin password');
-  const saved = localStorage.getItem('pfl_admin_pw') || 'Rowland12#';
-  if(pw === saved){ alert('Unlocked — you can edit now'); } else { alert('Wrong password'); }
-});
-</script>
-</body>
-        </html>
-  <div class="card">
-    <h3 style="margin:0;color:var(--gold)">Data JSON (preview / export / publish)</h3>
-    <div class="small">Edit locally, then Export or Publish to GitHub (optional token required).</div>
-    <pre id="jsonPreview">Loading data…</pre>
-    <div style="display:flex; gap:8px; margin-top:8px;">
-      <button class="btnGold" id="btnExport">Export JSON (copy)</button>
-      <button class="btnGhost" id="btnImport">Import JSON (paste)</button>
-      <button class="btnGhost" id="btnPublish">Publish to GitHub (optional)</button>
-    </div>
-    <div style="margin-top:8px;" class="small">If you publish, you'll be asked for a GitHub token (use a token you create & keep private). You can also update data.json manually in GitHub.</div>
-  </div>
-
-  <div class="card">
-    <h3 style="margin:0;color:var(--gold)">Archive & Helpers</h3>
-    <div class="small">Archive shows saved matches and allows lightweight editing.</div>
-    <div id="archivePreview" class="small">No archive loaded</div>
-  </div>
-
 </div>
 
 <script>
-/* Admin logic (no server required). Works with data.json in your repo. */
-/* Local edit model */
-let model = null;
-const DEFAULT_RAW = document.getElementById('rawUrl').value;
+let live = false;
 
-/* helpers */
-function b64Encode(str){ return btoa(unescape(encodeURIComponent(str))); }
-function b64Decode(str){ return decodeURIComponent(escape(atob(str))); }
-
-/* load remote data.json preview */
-async function loadRemote(){
-  const url = document.getElementById('rawUrl').value.trim() || DEFAULT_RAW;
-  try{
-    const r = await fetch(url + '?cachebust=' + Date.now());
-    if(!r.ok) throw new Error('no remote data');
-    model = await r.json();
-  }catch(e){
-    // fall back to default if remote missing
-    if(!model) model = { meta:{competition:'Pinnacle Football League', organiser:'Arcane Override Games', updatedAt:new Date().toISOString()}, live:null, fixtures:[], archive:[], predictions:[], comments:[], players:{} };
-  }
-  refreshUI();
-}
-
-/* refresh UI from model */
-function refreshUI(){
-  document.getElementById('jsonPreview').innerText = JSON.stringify(model, null, 2);
-  // populate fixtures select and fixturesText
-  const sel = document.getElementById('selectFixture');
-  sel.innerHTML = '<option value="">-- pick --</option>';
-  document.getElementById('fixturesText').value = (model.fixtures||[]).map(f => `${f.date},${f.time},${f.home},${f.away},${f.venue}`).join('\\n');
-  (model.fixtures||[]).forEach((f,i)=> sel.innerHTML += `<option value="${i}">${f.date} ${f.time} • ${f.home} vs ${f.away}</option>`);
-  // archive preview
-  document.getElementById('archivePreview').innerText = (model.archive||[]).slice().reverse().map(m => `${m.homeTeam} ${m.homeScore}:${m.awayScore} ${m.awayTeam} (${m.timestamp})`).slice(0,10).join('\\n') || 'No archived matches';
-}
-
-/* load default remote on start */
-loadRemote();
-
-/* fixtures load button */
-document.getElementById('btnLoadFixtures').addEventListener('click', ()=>{
-  const lines = document.getElementById('fixturesText').value.trim().split('\\n').map(l=>l.trim()).filter(Boolean);
-  const arr = lines.map(line => {
-    const parts = line.split(',').map(s=>s.trim());
-    return { date: parts[0]||'', time: parts[1]||'', home: parts[2]||'', away: parts[3]||'', venue: parts[4]||'' };
-  });
-  model.fixtures = arr;
-  model.meta.updatedAt = new Date().toISOString();
-  refreshUI();
-});
-
-/* set live */
-document.getElementById('btnSetLive').addEventListener('click', ()=>{
-  const idx = document.getElementById('selectFixture').value;
-  if(idx === '') return alert('Pick a fixture');
-  const f = model.fixtures[idx];
-  if(!f) return alert('Missing fixture');
-  model.live = {
-    homeTeam: f.home,
-    awayTeam: f.away,
-    homeScore: Number(document.getElementById('homeScore').value||0),
-    awayScore: Number(document.getElementById('awayScore').value||0),
-    subs: (document.getElementById('liveSubs').value||'').split('\\n').filter(Boolean),
-    homeRatings: (document.getElementById('homeRatings').value||'').split(',').map(s=>s.trim()).filter(Boolean),
-    awayRatings: (document.getElementById('awayRatings').value||'').split(',').map(s=>s.trim()).filter(Boolean),
-    homeCoach: f.homeCoach || '',
-    awayCoach: f.awayCoach || '',
-    status: 'live',
-    timestamp: new Date().toISOString(),
-    fixtureId: f.id || null
-  };
-  model.meta.updatedAt = new Date().toISOString();
-  refreshUI();
-  alert('Live match set in editor. Use Publish to push to GitHub or Export to copy JSON.');
-});
-
-/* update live without changing fixture */
-document.getElementById('btnUpdateLive').addEventListener('click', ()=>{
-  if(!model.live) return alert('No live match set; use Set Live first.');
-  model.live.homeScore = Number(document.getElementById('homeScore').value||0);
-  model.live.awayScore = Number(document.getElementById('awayScore').value||0);
-  model.live.subs = (document.getElementById('liveSubs').value||'').split('\\n').filter(Boolean);
-  model.live.homeRatings = (document.getElementById('homeRatings').value||'').split(',').map(s=>s.trim()).filter(Boolean);
-  model.live.awayRatings = (document.getElementById('awayRatings').value||'').split(',').map(s=>s.trim()).filter(Boolean);
-  model.meta.updatedAt = new Date().toISOString();
-  refreshUI();
-  alert('Live updated locally.');
-});
-
-/* end & archive */
-document.getElementById('btnEndAndArchive').addEventListener('click', ()=>{
-  if(!model.live) return alert('No live match');
-  // add simple homeStats/awayStats placeholders if missing
-  if(!model.live.homeStats) model.live.homeStats = [model.live.homeScore||0,0,0,0];
-  if(!model.live.awayStats) model.live.awayStats = [model.live.awayScore||0,0,0,0];
-  model.archive = model.archive || [];
-  model.archive.push(model.live);
-  model.live = null;
-  model.meta.updatedAt = new Date().toISOString();
-  refreshUI();
-  alert('Match archived locally. Publish to push to GitHub if you want site to auto-update.');
-});
-
-/* export */
-document.getElementById('btnExport').addEventListener('click', ()=>{
-  const txt = JSON.stringify(model, null, 2);
-  navigator.clipboard.writeText(txt).then(()=> alert('JSON copied to clipboard — paste into GitHub data.json or share.'), ()=> {
-    // fallback: show in prompt
-    prompt('Copy JSON', txt);
-  });
-});
-
-/* import paste */
-document.getElementById('btnImport').addEventListener('click', ()=>{
-  const pasted = prompt('Paste JSON here to import (overwrites current editor data).');
-  if(!pasted) return;
-  try{
-    const obj = JSON.parse(pasted);
-    model = obj;
-    refreshUI();
-    alert('Imported.');
-  }catch(e){ alert('Invalid JSON'); }
-});
-
-/* Publish to GitHub (optional) */
-document.getElementById('btnPublish').addEventListener('click', async ()=>{
-  // ask for token
-  const token = prompt('Enter a GitHub Personal Access Token (repo scope). Leave empty to cancel.');
-  if(!token) return;
-  const owner = document.getElementById('ghOwner').value.trim();
-  const repo = document.getElementById('ghRepo').value.trim();
-  const branch = document.getElementById('ghBranch').value.trim() || 'main';
-  const path = document.getElementById('filePath').value.trim() || 'data.json';
-  if(!owner || !repo) return alert('Enter owner and repo.');
-
-  // fetch current file SHA (if exists)
-  const getUrl = `https://api.github.com/repos/${owner}/${repo}/contents/${path}`;
-  let sha = null;
-  try{
-    const res = await fetch(getUrl + `?ref=${branch}`, { headers: { Authorization: 'token ' + token } });
-    if(res.ok){
-      const j = await res.json();
-      sha = j.sha;
-    }
-  }catch(e){ console.error(e); }
-
-  const content = JSON.stringify(model, null, 2);
-  const body = { message: 'Update data.json via PFL admin', content: b64Encode(content), branch: branch };
-  if(sha) body.sha = sha;
-  const putRes = await fetch(getUrl, { method: 'PUT', headers: { Authorization: 'token ' + token, 'Content-Type':'application/json' }, body: JSON.stringify(body) });
-  if(putRes.ok){
-    alert('Published data.json to GitHub ✓');
-    // update rawUrl preview
-    loadRemote();
+function toggleLive(){
+  const status = document.getElementById('status');
+  live = !live;
+  if(live){
+    status.value = 'live';
+    document.getElementById('goLive').style.background='green';
+    document.getElementById('goLive').innerText='End Match';
   } else {
-    const err = await putRes.text();
-    alert('Publish failed: ' + err.slice(0,200));
+    status.value = 'ended';
+    document.getElementById('goLive').style.background='red';
+    document.getElementById('goLive').innerText='Go Live';
   }
-});
+  updateSummary();
+}
 
-/* unlock / simple password */
-document.getElementById('btnUnlock').addEventListener('click', ()=>{
-  const pw = prompt('Enter admin password');
-  const saved = localStorage.getItem('pfl_admin_pw') || 'Rowland12#';
-  if(pw === saved){ alert('Unlocked — you can edit now'); } else { alert('Wrong password'); }
+function updateSummary(){
+  const teamA = document.getElementById('teamA').value || 'Team A';
+  const teamB = document.getElementById('teamB').value || 'Team B';
+  const scoreA = document.getElementById('scoreA').value;
+  const scoreB = document.getElementById('scoreB').value;
+  const venue = document.getElementById('venue').value;
+  const time = document.getElementById('matchTime').value || 'TBD';
+  const status = document.getElementById('status').value;
+  document.getElementById('summaryText').innerHTML =
+    `<strong>${teamA} ${scoreA} - ${scoreB} ${teamB}</strong><br>
+    Venue: ${venue}<br>
+    Kick-off: ${time}<br>
+    Status: ${status.toUpperCase()}`;
+}
+
+function saveData(){
+  const matchData = {
+    teamA: document.getElementById('teamA').value,
+    teamB: document.getElementById('teamB').value,
+    venue: document.getElementById('venue').value,
+    kickOff: document.getElementById('matchTime').value,
+    scoreA: document.getElementById('scoreA').value,
+    scoreB: document.getElementById('scoreB').value,
+    status: document.getElementById('status').value
+  };
+  
+  // Convert to JSON string
+  const json = JSON.stringify(matchData, null, 2);
+  
+  // Download as data.json manually
+  const blob = new Blob([json], {type: "application/json"});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "data.json";
+  a.click();
+  URL.revokeObjectURL(url);
+  
+  alert("Match data saved! Upload this data.json to your Netlify site to update live.");
+}
+
+// Update live summary automatically when inputs change
+document.querySelectorAll('input, select').forEach(el => {
+  el.addEventListener('input', updateSummary);
 });
 </script>
 </body>
-</html>ElementById('awayLogoFile');
-  const createMatchBtn = document.getElementById('createMatchBtn');
-  const refreshMatches = document.getElementById('refreshMatches');
-
-  let matchesCache = [];
-  let editingMatchId = null;
-
-  unlockBtn.addEventListener('click', ()=>{
-    if(passInput.value === ADMIN_PASS){
-      passInput.value = '';
-      adminControls.style.display = 'block';
-      alert('Admin unlocked.');
-    } else {
-      alert('Wrong password.');
-    }
-  });
-
-  // Create match
-  createMatchBtn.addEventListener('click', async ()=>{
-    if(!homeName.value.trim() || !awayName.value.trim()){ alert('Enter both team names'); return; }
-    createMatchBtn.disabled = true;
-    createMatchBtn.textContent = 'Creating...';
-    // upload logos if provided
-    let homeLogoUrl = '';
-    let awayLogoUrl = '';
-    if(homeLogoFile.files && homeLogoFile.files[0]){
-      homeLogoUrl = await uploadLogoFile(homeLogoFile.files[0], 'team_home');
-    }
-    if(awayLogoFile.files && awayLogoFile.files[0]){
-      awayLogoUrl = await uploadLogoFile(awayLogoFile.files[0], 'team_away');
-    }
-    const matchObj = {
-      home: { name: homeName.value.trim(), coach: homeCoach.value.trim()||'', players: homePlayers.value.split(',').map(s=>s.trim()).filter(Boolean), logoUrl: homeLogoUrl, score: 0 },
-      away: { name: awayName.value.trim(), coach: awayCoach.value.trim()||'', players: awayPlayers.value.split(',').map(s=>s.trim()).filter(Boolean), logoUrl: awayLogoUrl, score: 0 },
-      status: 'not_started',
-      events: []
-    };
-    try{
-      const key = await pushMatch(matchObj);
-      alert('Match created.');
-      homeName.value=''; awayName.value=''; homeCoach.value=''; awayCoach.value=''; homePlayers.value=''; awayPlayers.value=''; homeLogoFile.value=''; awayLogoFile.value='';
-    }catch(e){
-      console.error(e); alert('Failed creating match: '+e.message);
-    } finally {
-      createMatchBtn.disabled = false;
-      createMatchBtn.textContent = 'Create Match';
-    }
-  });
-
-  // Listen matches in real-time and render list
-  listenMatches((matches)=>{
-    matchesCache = matches || [];
-    renderMatchList();
-    // If currently editing a match, refresh its editor data
-    if(editingMatchId){ refreshEditor(editingMatchId); }
-  });
-
-  function renderMatchList(){
-    matchList.innerHTML = '';
-    if(!matchesCache.length){ matchList.innerHTML = '<div class="muted">No matches yet</div>'; return; }
-    // newest first
-    matchesCache.sort((a,b)=> (b.createdAt||'').localeCompare(a.createdAt||''));
-    matchesCache.forEach(m=>{
-      const div = document.createElement('div'); div.className='match-item';
-      div.innerHTML = `<div>
-          <div style="font-weight:700">${m.home?.name||'Home'} vs ${m.away?.name||'Away'}</div>
-          <div class="muted">${m.status || 'not_started'} • ${new Date(m.createdAt||'').toLocaleString()}</div>
-        </div>
-        <div style="display:flex; gap:8px; align-items:center;">
-          <button class="small" data-id="${m.id}" data-act="edit">Edit</button>
-          <button class="small" data-id="${m.id}" data-act="setLive">Live</button>
-          <button class="small" data-id="${m.id}" data-act="end">End</button>
-        </div>`;
-      matchList.appendChild(div);
-    });
-    // attach clicks
-    matchList.querySelectorAll('button').forEach(btn=>{
-      btn.addEventListener('click', (e)=>{
-        const id = btn.getAttribute('data-id');
-        const act = btn.getAttribute('data-act');
-        if(act==='edit') openEditor(id);
-        else if(act==='setLive') setMatchLive(id);
-        else if(act==='end') endMatch(id);
-      });
-    });
-  }
-
-  async function openEditor(id){
-    editingMatchId = id;
-    matchEditorCard.style.display = 'block';
-    document.getElementById('editingTitle').textContent = 'Editing match';
-    refreshEditor(id);
-  }
-
-  async function refreshEditor(id){
-    const m = matchesCache.find(x=>x.id===id);
-    if(!m) return;
-    document.getElementById('editHomeName').value = m.home?.name || '';
-    document.getElementById('editAwayName').value = m.away?.name || '';
-    document.getElementById('editHomeScore').value = m.home?.score || 0;
-    document.getElementById('editAwayScore').value = m.away?.score || 0;
-    // render events
-    const el = document.getElementById('evtList');
-    el.innerHTML = '';
-    (m.events||[]).forEach(ev=>{
-      const d = document.createElement('div'); d.style.padding='6px'; d.style.borderBottom='1px solid rgba(255,255,255,0.03)';
-      d.innerHTML = `<div style="font-weight:700">${ev.minute} — ${ev.type}</div><div class="muted">${ev.desc}</div>`;
-      el.appendChild(d);
-    });
-    // save button
-    document.getElementById('saveMatchBtn').onclick = async ()=>{
-      const patch = {
-        home: { ...m.home, name: document.getElementById('editHomeName').value.trim(), score: Number(document.getElementById('editHomeScore').value||0) },
-        away: { ...m.away, name: document.getElementById('editAwayName').value.trim(), score: Number(document.getElementById('editAwayScore').value||0) }
-      };
-      await updateMatch(id, patch);
-      alert('Saved.');
-    };
-    document.getElementById('deleteMatchBtn').onclick = async ()=>{
-      if(!confirm('Delete match permanently?')) return;
-      // remove by setting null
-      await updateMatch(id, { deleted: true, status: 'deleted' });
-      alert('Marked deleted (it will be hidden).');
-    };
-    document.getElementById('addEventBtn').onclick = async ()=>{
-      const minute = document.getElementById('evtMinute').value.trim() || '';
-      const desc = document.getElementById('evtDesc').value.trim();
-      const team = document.getElementById('evtTeam').value || '';
-      if(!desc){ alert('Add description'); return; }
-      const ev = { type: desc.split('-')[0] || 'Event', minute: minute || new Date().getMinutes().toString(), desc, team, timestamp: new Date().toISOString() };
-      const newEvents = [ev].concat(m.events || []);
-      await updateMatch(id, { events: newEvents });
-      document.getElementById('evtMinute').value=''; document.getElementById('evtDesc').value='';
-      alert('Event added.');
-    };
-    document.getElementById('setLiveBtn').onclick = async ()=>{
-      // set all matches to not live, then set this one live
-      // naive approach: iterate cached matches
-      for(const mm of matchesCache){
-        await updateMatch(mm.id, { status: mm.id === id ? 'live' : (mm.status === 'deleted' ? 'deleted' : 'finished') });
-      }
-      alert('Match set to LIVE.');
-    };
-    document.getElementById('endMatchBtn').onclick = async ()=>{
-      await updateMatch(id, { status: 'finished' });
-      alert('Match ended.');
-    };
-  }
-
-  async function setMatchLive(id){
-    // same as setLiveBtn but simple
-    for(const mm of matchesCache){
-      await updateMatch(mm.id, { status: mm.id === id ? 'live' : (mm.status === 'deleted' ? 'deleted' : 'finished') });
-    }
-    alert('Match set to LIVE.');
-  }
-  async function endMatch(id){
-    await updateMatch(id, { status: 'finished' });
-    alert('Match ended.');
-  }
-
-  refreshMatches.addEventListener('click', ()=> renderMatchList());
-
-  // convenience: upload logo and replace in match (not in create) - handled in editor if needed via prompt+file
-  // (uploadLogoFile is used during create above)
-</script>
-</body>
-  </html>
+</html>
