@@ -1,40 +1,313 @@
-<!DOCTYPE html>
-<html>
+<!doctype html>
+<html lang="en">
 <head>
-  <title>PFL Live Hub</title>
-  <style>
-    body { font-family: Arial, sans-serif; background: #000; color: #fff; text-align:center; margin:0; padding:0;}
-    h1, h2, h3 { color: gold; margin: 10px 0; }
-    #liveMatch, #comments, #predictions, #archive, #fixtures, #league, #charts { padding: 20px; border-bottom: 2px solid #444; }
-    .team { display:inline-block; width:45%; font-size: 1.8em; color: #fff; }
-    .score { font-size: 4em; margin: 0 20px; color: gold; transition: color 0.5s; }
-    .goal { color: red !important; }
-    .subs, .form, .ratings, .star { font-size: 1em; margin-top: 10px; color: #ccc; }
-    textarea { width: 100%; padding:5px; margin-top:5px; }
-    button { padding: 5px 10px; margin-top:5px; }
-    pre { text-align:left; background:#111; padding:10px; overflow:auto; }
-    table { margin:auto; border-collapse: collapse; width:90%; color:#fff; }
-    th, td { border: 1px solid #444; padding:5px; }
-    th { color: gold; }
-  </style>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Pinnacle Football League | LiveScore Center</title>
+<meta name="description" content="Pinnacle Football League live scores, tables, fixtures and stats.">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;600;800&display=swap" rel="stylesheet">
+<style>
+  :root{ --bg:#050505; --card:#0c0c0c; --gold:#d4af37; --muted:#c3c6c8; --white:#ffffff; --danger:#ff4d4f; }
+  body{ margin:0; font-family:Inter,system-ui,Arial; background:var(--bg); color:var(--white); }
+  header{ display:flex; align-items:center; gap:12px; padding:14px; border-bottom:1px solid rgba(255,255,255,0.03); }
+  header h1{ margin:0; color:var(--gold); font-size:20px; }
+  main{ max-width:1100px; margin:14px auto; padding:12px; display:grid; gap:12px; grid-template-columns: 1fr 360px; }
+  .card{ background:linear-gradient(180deg, rgba(255,255,255,0.01), rgba(255,255,255,0.02)); padding:12px; border-radius:12px; border:1px solid rgba(255,255,255,0.03); }
+  /* Live match */
+  .liveBox{ display:flex; align-items:center; justify-content:space-between; gap:12px; }
+  .teamCol{ width:40%; text-align:left; }
+  .teamName{ font-weight:800; font-size:18px; }
+  .score{ font-weight:900; font-size:44px; color:var(--gold); min-width:80px; text-align:center; }
+  .meta{ color:var(--muted); font-size:13px; }
+  .goalFlash{ color:var(--danger) !important; transition: color .4s; }
+  /* right column */
+  aside{ display:flex; flex-direction:column; gap:12px; }
+  .small{ color:var(--muted); font-size:13px; }
+  table{ width:100%; border-collapse:collapse; margin-top:8px; }
+  th, td{ padding:8px; border-bottom:1px solid rgba(255,255,255,0.03); text-align:left; font-size:14px; }
+  th{ color:var(--gold); font-weight:800; }
+  pre{ background:#0a0a0a; padding:10px; overflow:auto; color:var(--muted); }
+  button{ padding:8px 10px; border-radius:8px; border:0; cursor:pointer; font-weight:700; }
+  .btnGold{ background:linear-gradient(90deg,var(--gold),#ffd87a); color:#111; }
+  .commentBox textarea{ width:100%; padding:8px; border-radius:8px; background:#0b0b0b; color:var(--white); border:1px solid rgba(255,255,255,0.03); }
+  .predictionRow{ display:flex; gap:8px; align-items:center; margin-top:8px; }
+  footer{ text-align:center; color:var(--muted); padding:12px 0; }
+  @media(max-width:980px){
+    main{ grid-template-columns: 1fr; padding:8px; }
+    .score{ font-size:36px; }
+  }
+</style>
 </head>
 <body>
-  <h1>🏆 Pinnacle Football League</h1>
+<header>
+  <div>
+    <h1>Pinnacle Football League — LiveScore Center</h1>
+    <div class="small">Organised by Arcane Override Games</div>
+  </div>
+</header>
 
-  <!-- Live Match -->
-  <div id="liveMatch">
-    <div class="team" id="homeTeam"></div>
-    <span class="score" id="homeScore">0</span>
-    <span class="score">:</span>
-    <span class="score" id="awayScore">0</span>
-    <div class="team" id="awayTeam"></div>
+<main>
+  <section class="card" id="liveSection">
+    <div id="liveArea">
+      <div class="meta">Loading live match…</div>
+    </div>
+  </section>
 
-    <div class="subs" id="subs"></div>
-    <div class="form" id="form"></div>
-    <div class="ratings" id="ratings"></div>
-    <div class="star" id="starPlayer"></div>
+  <aside>
+    <div class="card" id="fixturesCard">
+      <h3 style="margin:0;color:var(--gold)">Next Fixtures</h3>
+      <div id="fixtureList" class="small">Loading…</div>
+    </div>
 
-    <audio id="goalSound" src="https://actions.google.com/sounds/v1/alarms/beep_short.ogg"></audio>
+    <div class="card" id="tableCard">
+      <h3 style="margin:0;color:var(--gold)">League Table</h3>
+      <div id="tableWrap" class="small">Loading…</div>
+    </div>
+
+    <div class="card" id="chartsCard">
+      <h3 style="margin:0;color:var(--gold)">Stats (history)</h3>
+      <pre id="chartsPre">Loading charts…</pre>
+    </div>
+  </aside>
+
+  <section class="card" style="grid-column:1/3">
+    <div style="display:flex; gap:12px; align-items:flex-start; flex-wrap:wrap;">
+      <div style="flex:1; min-width:280px;">
+        <h3 style="margin:0;color:var(--gold)">Fan Predictions</h3>
+        <div class="small">Select before kick-off (name required)</div>
+        <div style="margin-top:8px;">
+          <input id="predName" placeholder="Your name" style="padding:8px;border-radius:8px;border:1px solid rgba(255,255,255,0.03);background:#0b0b0b;color:#fff;width:200px">
+          <div class="predictionRow">
+            <label><input type="radio" name="pred" value="Home Win"> Home Win</label>
+            <label><input type="radio" name="pred" value="Draw"> Draw</label>
+            <label><input type="radio" name="pred" value="Away Win"> Away Win</label>
+            <button class="btn btnGold" onclick="submitPrediction()">Submit</button>
+          </div>
+          <div id="predStats" class="small" style="margin-top:8px"></div>
+        </div>
+      </div>
+
+      <div style="flex:1; min-width:280px;">
+        <h3 style="margin:0;color:var(--gold)">Fan Comments</h3>
+        <div class="small">Please provide your name</div>
+        <div class="commentBox" style="margin-top:8px">
+          <input id="commentName" placeholder="Your name" style="padding:8px;border-radius:8px;border:1px solid rgba(255,255,255,0.03);background:#0b0b0b;color:#fff;width:200px">
+          <textarea id="commentText" rows="3" placeholder="Write a comment…"></textarea>
+          <button class="btn" style="margin-top:6px" onclick="submitComment()">Post Comment</button>
+        </div>
+        <div id="commentList" class="small" style="margin-top:8px"></div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer>© Pinnacle Football League — Arcane Override Games</footer>
+
+<script>
+/* ===== CONFIG ===== */
+const RAW_DATA_URL = 'https://raw.githubusercontent.com/rowlandmayowa527-ai/pfl-livescore-center/main/data.json';
+const POLL_INTERVAL = 5000; // ms
+
+/* state */
+let cachedData = null;
+let lastLiveScores = { home: -1, away: -1 };
+
+/* fetch & render */
+async function fetchData(){
+  try{
+    const r = await fetch(RAW_DATA_URL + '?cachebust=' + Date.now());
+    if(!r.ok) throw new Error('Failed to fetch data.json');
+    const j = await r.json();
+    cachedData = j;
+    renderAll();
+  }catch(err){
+    console.error(err);
+    document.getElementById('liveArea').innerHTML = '<div class="meta">Unable to fetch live data.</div>';
+  }
+}
+
+function renderAll(){
+  renderLive();
+  renderFixtures();
+  renderTable();
+  renderCharts();
+  renderComments();
+  renderPredictions();
+}
+
+function renderLive(){
+  const live = cachedData.live;
+  const area = document.getElementById('liveArea');
+  if(!live){
+    area.innerHTML = `<div class="meta">No match is live right now. Check next fixtures.</div>`;
+    lastLiveScores = { home:-1, away:-1 };
+    return;
+  }
+  // build teams and score
+  const home = live.homeTeam || 'Home';
+  const away = live.awayTeam || 'Away';
+  const hs = Number(live.homeScore || 0);
+  const as = Number(live.awayScore || 0);
+
+  // detect goal events
+  const homeGoal = hs > lastLiveScores.home;
+  const awayGoal = as > lastLiveScores.away;
+
+  const homeNameHtml = `<div class="teamCol"><div class="teamName">${home}</div><div class="meta">Coach: ${live.homeCoach||'—'}</div></div>`;
+  const awayNameHtml = `<div class="teamCol" style="text-align:right;"><div class="teamName">${away}</div><div class="meta">Coach: ${live.awayCoach||'—'}</div></div>`;
+  const scoreHtml = `<div class="score ${homeGoal ? 'goalFlash':''}">${hs}</div><div class="score" style="font-size:22px">:</div><div class="score ${awayGoal ? 'goalFlash':''}" style="font-size:44px">${as}</div>`;
+
+  area.innerHTML = `
+    <div class="liveBox">
+      ${homeNameHtml}
+      <div style="display:flex;align-items:center;gap:8px">${scoreHtml}</div>
+      ${awayNameHtml}
+    </div>
+    <div style="margin-top:8px" class="meta">Status: ${live.status || 'not started'} • ${new Date(live.timestamp || cachedData.meta.updatedAt).toLocaleString()}</div>
+    <div style="margin-top:10px" class="small"><strong>Subs/Notes:</strong><br>${(live.subs||[]).join('<br>') || 'No notes'}</div>
+    <div style="margin-top:10px" class="small"><strong>Player Ratings:</strong><br>${(live.homeRatings||[]).join(', ') || '—'} | ${(live.awayRatings||[]).join(', ') || '—'}</div>
+  `;
+
+  // play sound on goal
+  if(homeGoal || awayGoal){
+    const s = new Audio('https://actions.google.com/sounds/v1/alarms/beep_short.ogg');
+    s.play().catch(()=>{ /* autoplay may block on mobile until user interacts */ });
+  }
+
+  lastLiveScores = { home: hs, away: as };
+}
+
+function renderFixtures(){
+  const list = cachedData.fixtures || [];
+  const out = document.getElementById('fixtureList');
+  if(!list.length){ out.innerHTML = '<div class="small">No fixtures</div>'; return; }
+  out.innerHTML = list.map(f => `<div style="margin-bottom:6px;"><strong style="color:var(--gold)">${f.date} ${f.time}</strong> — ${f.home} vs ${f.away} <div class="small">Venue: ${f.venue}</div></div>`).join('');
+}
+
+function renderTable(){
+  const archive = cachedData.archive || [];
+  // compute table
+  const table = {};
+  archive.forEach(m=>{
+    [m.homeTeam, m.awayTeam].forEach(t => { if(!table[t]) table[t] = {P:0,W:0,D:0,L:0,GF:0,GA:0,GD:0,Pts:0}; });
+    table[m.homeTeam].P++; table[m.awayTeam].P++;
+    table[m.homeTeam].GF += m.homeScore; table[m.homeTeam].GA += m.awayScore;
+    table[m.awayTeam].GF += m.awayScore; table[m.awayTeam].GA += m.homeScore;
+    if(m.homeScore > m.awayScore){ table[m.homeTeam].W++; table[m.awayTeam].L++; table[m.homeTeam].Pts += 3; }
+    else if(m.homeScore < m.awayScore){ table[m.awayTeam].W++; table[m.homeTeam].L++; table[m.awayTeam].Pts += 3; }
+    else { table[m.homeTeam].D++; table[m.awayTeam].D++; table[m.homeTeam].Pts++; table[m.awayTeam].Pts++; }
+  });
+  // render table
+  const wrap = document.getElementById('tableWrap');
+  if(Object.keys(table).length === 0){ wrap.innerHTML = '<div class="small">Table will appear after matches are played.</div>'; return; }
+  let html = '<table><thead><tr><th>Team</th><th>P</th><th>W</th><th>D</th><th>L</th><th>GF</th><th>GA</th><th>GD</th><th>Pts</th></tr></thead><tbody>';
+  Object.entries(table).sort((a,b)=> b[1].Pts - a[1].Pts).forEach(([team,st])=>{
+    html += `<tr><td>${team}</td><td>${st.P}</td><td>${st.W}</td><td>${st.D}</td><td>${st.L}</td><td>${st.GF}</td><td>${st.GA}</td><td>${st.GD}</td><td>${st.Pts}</td></tr>`;
+  });
+  html += '</tbody></table>';
+  wrap.innerHTML = html;
+}
+
+function renderCharts(){
+  // aggregates from archive
+  const archive = cachedData.archive || [];
+  const teams = {};
+  archive.forEach(m=>{
+    [m.homeTeam, m.awayTeam].forEach(t => { if(!teams[t]) teams[t] = {G:0,A:0,Y:0,R:0}; });
+    // homeStats format: [goals, assists, yellow, red]
+    const h = m.homeStats || [0,0,0,0];
+    const a = m.awayStats || [0,0,0,0];
+    teams[m.homeTeam].G += Number(h[0]||0); teams[m.homeTeam].A += Number(h[1]||0); teams[m.homeTeam].Y += Number(h[2]||0); teams[m.homeTeam].R += Number(h[3]||0);
+    teams[m.awayTeam].G += Number(a[0]||0); teams[m.awayTeam].A += Number(a[1]||0); teams[m.awayTeam].Y += Number(a[2]||0); teams[m.awayTeam].R += Number(a[3]||0);
+  });
+  // build simple text bars
+  const makeBars = (n)=> '█'.repeat(Math.min(n,30));
+  let out = 'Goals:\\n';
+  Object.entries(teams).forEach(([t,v])=> out += `${t} ${makeBars(v.G)} ${v.G}\n`);
+  out += '\\nAssists:\\n';
+  Object.entries(teams).forEach(([t,v])=> out += `${t} ${makeBars(v.A)} ${v.A}\n`);
+  out += '\\nYellow Cards:\\n';
+  Object.entries(teams).forEach(([t,v])=> out += `${t} ${makeBars(v.Y)} ${v.Y}\n`);
+  out += '\\nRed Cards:\\n';
+  Object.entries(teams).forEach(([t,v])=> out += `${t} ${makeBars(v.R)} ${v.R}\n`);
+  document.getElementById('chartsPre').innerText = out;
+}
+
+function renderComments(){
+  const comments = cachedData.comments || [];
+  const list = document.getElementById('commentList');
+  if(!comments.length){ list.innerHTML = '<div class="small">No comments yet.</div>'; return; }
+  list.innerHTML = comments.slice().reverse().map(c => `<div style="margin-bottom:6px;"><strong>${escapeHtml(c.name)}:</strong> ${escapeHtml(c.text)}</div>`).join('');
+}
+
+function renderPredictions(){
+  const preds = cachedData.predictions || [];
+  const counts = {home:0,draw:0,away:0};
+  preds.forEach(p => { if(p.choice === 'Home Win') counts.home++; else if(p.choice === 'Draw') counts.draw++; else counts.away++; });
+  document.getElementById('predStats').innerText = `Home Win: ${counts.home} | Draw: ${counts.draw} | Away Win: ${counts.away}`;
+}
+
+/* ====== fan actions ====== */
+function submitComment(){
+  const name = document.getElementById('commentName').value.trim();
+  const text = document.getElementById('commentText').value.trim();
+  if(!name || !text) return alert('Please enter your name and comment.');
+  const c = { name, text, ts: new Date().toISOString() };
+  // POST back to admin workflow is not possible directly; we append locally via GitHub if admin publishes,
+  // but in the meantime, we store comment in localStorage on the fan device (so they see their comment) and optionally call a public comments endpoint.
+  // Simpler: send comment to GitHub via Issues or use admin publish. We'll store in localStorage as "pendingComments".
+  let pend = JSON.parse(localStorage.getItem('pfl_pending_comments') || '[]');
+  pend.push(c);
+  localStorage.setItem('pfl_pending_comments', JSON.stringify(pend));
+  alert('Thanks — your comment is saved locally. Admin can import pending comments into data.json via Export/Import.');
+  document.getElementById('commentName').value=''; document.getElementById('commentText').value='';
+  renderLocalPendingComments();
+}
+
+function renderLocalPendingComments(){
+  const pend = JSON.parse(localStorage.getItem('pfl_pending_comments') || '[]');
+  // show locally on page as well
+  if(pend.length){
+    const list = document.getElementById('commentList');
+    let html = '<div style="margin-top:8px;color:var(--muted)"><strong>Your (local) comments:</strong></div>';
+    html += pend.slice().reverse().map(c => `<div style="margin-top:6px;"><strong>${escapeHtml(c.name)}:</strong> ${escapeHtml(c.text)}</div>`).join('');
+    list.innerHTML = (cachedData.comments||[]).slice().reverse().map(c => `<div style="margin-bottom:6px;"><strong>${escapeHtml(c.name)}:</strong> ${escapeHtml(c.text)}</div>`).join('') + html;
+  }
+}
+
+function submitPrediction(){
+  const name = document.getElementById('predName').value.trim();
+  if(!name) return alert('Enter your name first');
+  const sel = document.querySelector('input[name="pred"]:checked');
+  if(!sel) return alert('Pick an option');
+  const obj = { name, choice: sel.value, ts: new Date().toISOString() };
+  // locally store pending predictions -- admin imports later
+  let pending = JSON.parse(localStorage.getItem('pfl_pending_predictions') || '[]');
+  pending.push(obj);
+  localStorage.setItem('pfl_pending_predictions', JSON.stringify(pending));
+  alert('Prediction saved locally. Admin can import these into data.json if desired.');
+  renderLocalPendingPredictions();
+}
+
+function renderLocalPendingPredictions(){
+  const pending = JSON.parse(localStorage.getItem('pfl_pending_predictions') || '[]');
+  // show counts including pending
+  const counts = {home:0,draw:0,away:0};
+  (cachedData.predictions||[]).concat(pending).forEach(p => { if(p.choice==='Home Win') counts.home++; else if(p.choice==='Draw') counts.draw++; else counts.away++; });
+  document.getElementById('predStats').innerText = `Home Win: ${counts.home} | Draw: ${counts.draw} | Away Win: ${counts.away}`;
+}
+
+/* helper */
+function escapeHtml(s){ return String(s).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
+
+/* initial fetch + poll */
+fetchData();
+setInterval(fetchData, POLL_INTERVAL);
+renderLocalPendingComments();
+renderLocalPendingPredictions();
+</script>
+</body>
+</html>    <audio id="goalSound" src="https://actions.google.com/sounds/v1/alarms/beep_short.ogg"></audio>
 
     <!-- Predictions -->
     <div id="predictions">
