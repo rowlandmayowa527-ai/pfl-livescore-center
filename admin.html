@@ -3,13 +3,14 @@
 <head>
   <title>PFL Admin Panel</title>
   <style>
-    body { font-family: sans-serif; padding: 20px; background: #000; color: #fff; }
-    input, button, textarea { margin: 5px 0; padding: 8px; width: 100%; }
-    label { margin-top: 10px; display: block; }
+    body { font-family: sans-serif; background:#000; color:#fff; padding:20px;}
+    input, button, textarea { width:100%; margin:5px 0; padding:8px; }
+    label { margin-top:10px; display:block; }
+    h2 { color: gold; }
   </style>
 </head>
 <body>
-  <h2>PFL Live Match Admin</h2>
+  <h2>PFL Admin Panel</h2>
 
   <label>Home Team Name:</label>
   <input type="text" id="homeTeam">
@@ -23,10 +24,36 @@
   <label>Away Score:</label>
   <input type="number" id="awayScore" value="0">
 
-  <label>Substitutions / Notes (one per line, e.g., “Player1 -> Player2”):</label>
-  <textarea id="subs" rows="4"></textarea>
+  <label>Substitutions / Notes (one per line):</label>
+  <textarea id="subs" rows="3"></textarea>
 
-  <button onclick="updateMatch()">Update Live Match</button>
+  <label>Home Form (W/D/L):</label>
+  <input type="text" id="homeForm">
+
+  <label>Away Form:</label>
+  <input type="text" id="awayForm">
+
+  <label>Home Player Ratings (Player1-8,Player2-7,...):</label>
+  <input type="text" id="homeRatings">
+
+  <label>Away Player Ratings:</label>
+  <input type="text" id="awayRatings">
+
+  <label>Home Goals / Assists / Yellow Cards / Red Cards (format: goals,assists,yellow,red):</label>
+  <input type="text" id="homeStats">
+
+  <label>Away Goals / Assists / Yellow Cards / Red Cards:</label>
+  <input type="text" id="awayStats">
+
+  <h3>Next Fixture (optional)</h3>
+  <label>Home Team:</label>
+  <input type="text" id="nextHome">
+  <label>Away Team:</label>
+  <input type="text" id="nextAway">
+  <label>Match Date:</label>
+  <input type="date" id="nextDate">
+
+  <button onclick="updateMatch()">Save Match / Fixture</button>
 
   <script>
     function updateMatch() {
@@ -35,44 +62,40 @@
         awayTeam: document.getElementById('awayTeam').value,
         homeScore: parseInt(document.getElementById('homeScore').value),
         awayScore: parseInt(document.getElementById('awayScore').value),
-        subs: document.getElementById('subs').value.split('\n'), // array of substitutions
+        subs: document.getElementById('subs').value.split('\n'),
+        homeForm: document.getElementById('homeForm').value,
+        awayForm: document.getElementById('awayForm').value,
+        homeRatings: document.getElementById('homeRatings').value.split(','),
+        awayRatings: document.getElementById('awayRatings').value.split(','),
+        homeStats: document.getElementById('homeStats').value.split(',').map(Number),
+        awayStats: document.getElementById('awayStats').value.split(',').map(Number),
         timestamp: new Date().toISOString()
       };
 
-      // Save to current live match
+      // Current match
       localStorage.setItem('currentMatch', JSON.stringify(matchData));
 
-      // Archive match if it’s new
+      // Archive match
       let archive = JSON.parse(localStorage.getItem('matchArchive')) || [];
-      // Remove previous match if timestamp is same
       archive = archive.filter(m => m.timestamp !== matchData.timestamp);
       archive.push(matchData);
       localStorage.setItem('matchArchive', JSON.stringify(archive));
 
-      alert('Live match updated ✅');
+      // Save next fixture
+      let fixtures = JSON.parse(localStorage.getItem('nextFixtures')) || [];
+      const nextHome = document.getElementById('nextHome').value;
+      const nextAway = document.getElementById('nextAway').value;
+      const nextDate = document.getElementById('nextDate').value;
+      if(nextHome && nextAway && nextDate){
+        fixtures.push({home: nextHome, away: nextAway, date: nextDate});
+        localStorage.setItem('nextFixtures', JSON.stringify(fixtures));
+      }
+
+      alert('Match and fixture saved ✅');
     }
   </script>
 </body>
-</html>    <div class="row" style="align-items:center;">
-      <input id="passInput" type="password" placeholder="Admin password" />
-      <button id="unlockBtn" class="primary">Unlock</button>
-    </div>
-    <div id="adminControls" style="display:none; margin-top:12px;">
-      <div class="muted">Create a new match</div>
-      <div style="display:grid; gap:8px; margin-top:8px;">
-        <div class="row">
-          <input id="homeName" placeholder="Home team name" />
-          <input id="awayName" placeholder="Away team name" />
-        </div>
-        <div class="row">
-          <input id="homeCoach" placeholder="Home coach" />
-          <input id="awayCoach" placeholder="Away coach" />
-        </div>
-        <div class="row">
-          <input id="homePlayers" placeholder="Home players (comma separated)" />
-          <input id="awayPlayers" placeholder="Away players (comma separated)" />
-        </div>
-
+</html>
         <div class="row">
           <div style="flex:1">
             <label class="muted">Home logo</label>
