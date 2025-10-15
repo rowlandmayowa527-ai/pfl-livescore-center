@@ -1,89 +1,4 @@
-<!doctype html>
-<html lang="en">
-<head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>PFL Admin — Auto Publish</title>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;600;800&display=swap" rel="stylesheet">
-<style>
-  :root{ --bg:#050505; --card:#0c0c0c; --gold:#d4af37; --muted:#c3c6c8; --white:#fff; --danger:#ff4d4f;}
-  body{ margin:0; font-family:Inter,system-ui,Arial; background:var(--bg); color:var(--white); }
-  header{ background:var(--gold); color:#000; padding:14px; text-align:center; font-weight:700; }
-  .wrap{ max-width:1100px; margin:12px auto; padding:12px; display:grid; gap:12px; }
-  .card{ background:var(--card); padding:12px; border-radius:10px; border:1px solid rgba(255,255,255,0.03); }
-  label{ color:var(--muted); display:block; margin-top:8px; font-size:13px; }
-  input, select, textarea, button{ width:100%; padding:8px; margin-top:6px; border-radius:8px; border:1px solid rgba(255,255,255,0.04); background:#0b0b0b; color:var(--white); }
-  .row{ display:flex; gap:8px; }
-  .col{ flex:1; }
-  .btnGold{ background:linear-gradient(90deg,var(--gold),#ffd87a); color:#111; border:0; padding:8px 10px; cursor:pointer; font-weight:700; border-radius:8px; }
-  .btnRed{ background:var(--danger); color:#fff; border:0; padding:8px 10px; border-radius:8px; cursor:pointer; }
-  table{ width:100%; border-collapse:collapse; margin-top:8px; color:var(--white); }
-  th,td{ padding:8px; border-bottom:1px solid rgba(255,255,255,0.03); text-align:left; font-size:14px; }
-  th{ color:var(--gold); }
-  .small{ font-size:13px; color:var(--muted); }
-  .status{ padding:8px; margin-top:8px; border-radius:8px; font-weight:700; text-align:center;}
-  .ok{ background:#073b1a; color:#8ef08e; }
-  .err{ background:#4b0f0f; color:#ff9b9b; }
-  @media(max-width:900px){ .row{ flex-direction:column; } }
-</style>
-</head>
-<body>
-<header>Pinnacle Football League — Admin (Auto Publish)</header>
-<div class="wrap">
-
-  <!-- Login -->
-  <div id="loginCard" class="card">
-    <h3 style="margin:0;color:var(--gold)">Admin Login</h3>
-    <div class="small">Enter admin password to unlock (stored locally).</div>
-    <label>Password</label>
-    <input id="pw" type="password" placeholder="Password">
-    <button id="pwBtn" class="btnGold">Unlock</button>
-    <div id="loginMsg" class="status" style="display:none"></div>
-  </div>
-
-  <!-- Dashboard -->
-  <div id="dashboard" style="display:none">
-    <div class="card">
-      <h3 style="margin:0;color:var(--gold)">Quick actions</h3>
-      <div class="small">Edit fields below and click <strong>Publish to GitHub</strong> to update live site automatically.</div>
-      <div style="display:flex;gap:8px;margin-top:8px;">
-        <button id="btnReload" class="btnGold">Reload remote data.json</button>
-        <button id="btnExport" class="btnGold">Export JSON (copy)</button>
-      </div>
-      <div id="opMsg" class="status" style="display:none"></div>
-    </div>
-
-    <div class="card">
-      <h3 style="margin:0;color:var(--gold)">Create / Edit Fixture</h3>
-      <div class="row">
-        <div class="col"><label>Team A</label><input id="teamA" placeholder="Team A"></div>
-        <div class="col"><label>Team B</label><input id="teamB" placeholder="Team B"></div>
-      </div>
-      <div class="row">
-        <div class="col"><label>Venue</label>
-          <select id="venue"><option value="Mainbowl">Mainbowl</option><option value="Maracana">Maracana</option></select>
-        </div>
-        <div class="col"><label>Date</label><input id="mDate" type="date"></div>
-        <div class="col"><label>Time</label><input id="mTime" type="time"></div>
-      </div>
-      <div class="row">
-        <div class="col"><label>Score A (0–6)</label><select id="scoreA">${[0,1,2,3,4,5,6].map(n=>`<option value="${n}">${n}</option>`).join('')}</select></div>
-        <div class="col"><label>Score B (0–6)</label><select id="scoreB">${[0,1,2,3,4,5,6].map(n=>`<option value="${n}">${n}</option>`).join('')}</select></div>
-        <div class="col"><label>Status</label>
-          <select id="statusSel"><option value="upcoming">Upcoming</option><option value="live">Live</option><option value="ended">Ended</option></select>
-        </div>
-      </div>
-      <div style="display:flex;gap:8px;margin-top:8px;">
-        <button id="btnAdd" class="btnGold">Add Fixture</button>
-        <button id="btnSave" class="btnGold">Save Selected</button>
-        <button id="btnPublish" class="btnGold">Publish to GitHub</button>
-      </div>
-    </div>
-
-    <div class="card">
-      <h3 style="margin:0;color:var(--gold)">Fixtures — edit scores & go live</h3>
-      <div class="small">Live match automatically moves to top on fans page.</div>
-      <div id="fixturesWrap"></div>
+    <div id="fixturesWrap"></div>
     </div>
 
     <div class="card">
@@ -329,5 +244,136 @@ document.getElementById('pwBtn').addEventListener('click', ()=>{
 /* initial */
 renderAll();
 </script>
+</body>
+</html>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PFL Live Score Admin</title>
+<style>
+  body { font-family: Arial, sans-serif; background: #000; color: #fff; }
+  h1 { color: gold; text-align: center; }
+  table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+  th, td { border: 1px solid #fff; padding: 8px; text-align: center; }
+  th { background: gold; color: black; }
+  select, input { padding: 5px; margin: 2px; width: 100%; }
+  button { padding: 10px; margin: 5px; background: gold; color: black; border: none; cursor: pointer; font-weight: bold; }
+  .live { background-color: red; color: white; }
+</style>
+</head>
+<body>
+
+<h1>Pinnacle Football League - Admin Panel</h1>
+
+<table id="matchTable">
+  <thead>
+    <tr>
+      <th>Match</th>
+      <th>Home Team</th>
+      <th>Away Team</th>
+      <th>Venue</th>
+      <th>Time</th>
+      <th>Home Score</th>
+      <th>Away Score</th>
+      <th>Live</th>
+    </tr>
+  </thead>
+  <tbody>
+    <!-- Matches will be injected here -->
+  </tbody>
+</table>
+
+<button onclick="saveUpdates()">Update Matches</button>
+
+<script>
+const GITHUB_TOKEN = "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";
+const REPO_OWNER = "rowlandmayowa527-ai";
+const REPO_NAME = "pfl-livescore-center";
+const FILE_PATH = "data.json";
+
+// Example match data
+let matches = [
+  {id:1, home:"Blue Blazzers", away:"Dark Art FC", venue:"Mainbowl", time:"14:00", homeScore:0, awayScore:0, live:false},
+  {id:2, home:"Infinity FC", away:"Dynamos FC", venue:"Mainbowl", time:"15:00", homeScore:0, awayScore:0, live:false},
+  {id:3, home:"Shooting Stars", away:"FET 21/26", venue:"Mainbowl", time:"16:00", homeScore:0, awayScore:0, live:false},
+  {id:4, home:"Courage FC", away:"TBD", venue:"Mainbowl", time:"17:00", homeScore:0, awayScore:0, live:false}
+];
+
+// Inject table rows
+function renderTable() {
+  const tbody = document.querySelector("#matchTable tbody");
+  tbody.innerHTML = "";
+  matches.forEach(match => {
+    const row = document.createElement("tr");
+    row.innerHTML = `
+      <td>${match.id}</td>
+      <td><input type="text" value="${match.home}" onchange="updateField(${match.id}, 'home', this.value)"></td>
+      <td><input type="text" value="${match.away}" onchange="updateField(${match.id}, 'away', this.value)"></td>
+      <td>
+        <select onchange="updateField(${match.id}, 'venue', this.value)">
+          <option value="Mainbowl" ${match.venue==="Mainbowl"?'selected':''}>Mainbowl</option>
+          <option value="Maracana" ${match.venue==="Maracana"?'selected':''}>Maracana</option>
+        </select>
+      </td>
+      <td><input type="time" value="${match.time}" onchange="updateField(${match.id}, 'time', this.value)"></td>
+      <td><input type="number" min="0" max="6" value="${match.homeScore}" onchange="updateField(${match.id}, 'homeScore', this.value)"></td>
+      <td><input type="number" min="0" max="6" value="${match.awayScore}" onchange="updateField(${match.id}, 'awayScore', this.value)"></td>
+      <td><button class="${match.live?'live':''}" onclick="toggleLive(${match.id}, this)">${match.live?'LIVE':'OFF'}</button></td>
+    `;
+    tbody.appendChild(row);
+  });
+}
+
+function updateField(id, field, value) {
+  const match = matches.find(m => m.id === id);
+  if (field === "homeScore" || field === "awayScore") value = parseInt(value);
+  match[field] = value;
+}
+
+function toggleLive(id, btn) {
+  const match = matches.find(m => m.id === id);
+  match.live = !match.live;
+  btn.textContent = match.live ? 'LIVE' : 'OFF';
+  btn.className = match.live ? 'live' : '';
+}
+
+// GitHub API update
+async function saveUpdates() {
+  try {
+    // 1️⃣ Get current SHA of the file
+    const shaResp = await fetch(`https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/${FILE_PATH}`);
+    const shaData = await shaResp.json();
+    const sha = shaData.sha;
+
+    // 2️⃣ Push updated JSON
+    const response = await fetch(`https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/${FILE_PATH}`, {
+      method: 'PUT',
+      headers: {
+        'Authorization': `token ${GITHUB_TOKEN}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        message: "Update match data",
+        content: btoa(JSON.stringify(matches, null, 2)),
+        sha: sha
+      })
+    });
+
+    const result = await response.json();
+    if(result.content) alert("Matches updated successfully!");
+    else alert("Update failed. Check console.");
+    console.log(result);
+  } catch(e) {
+    console.error(e);
+    alert("Error updating matches.");
+  }
+}
+
+// Initial render
+renderTable();
+</script>
+
 </body>
 </html>
