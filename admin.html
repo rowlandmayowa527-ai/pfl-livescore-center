@@ -1,126 +1,333 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>PFL Admin Dashboard</title>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>PFL Admin — Auto Publish</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;600;800&display=swap" rel="stylesheet">
 <style>
-  body { margin:0; font-family: Arial,sans-serif; background:#000; color:#fff; }
-  header { background:#111; padding:20px; text-align:center; color:#D4AF37; font-size:24px; font-weight:bold; }
-  .container { padding:20px; max-width:800px; margin:auto; }
-  label { display:block; margin-top:15px; font-weight:bold; }
-  input, select { width:100%; padding:10px; margin-top:5px; border-radius:5px; border:none; }
-  button { padding:10px 15px; margin-top:15px; border:none; border-radius:5px; font-weight:bold; cursor:pointer; }
-  #goLive { background:red; color:#fff; }
-  #saveBtn { background:#D4AF37; color:#000; }
-  .live-summary { margin-top:20px; padding:15px; background:#111; border-radius:5px; }
-  h3 { color:#D4AF37; margin-bottom:10px; }
+  :root{ --bg:#050505; --card:#0c0c0c; --gold:#d4af37; --muted:#c3c6c8; --white:#fff; --danger:#ff4d4f;}
+  body{ margin:0; font-family:Inter,system-ui,Arial; background:var(--bg); color:var(--white); }
+  header{ background:var(--gold); color:#000; padding:14px; text-align:center; font-weight:700; }
+  .wrap{ max-width:1100px; margin:12px auto; padding:12px; display:grid; gap:12px; }
+  .card{ background:var(--card); padding:12px; border-radius:10px; border:1px solid rgba(255,255,255,0.03); }
+  label{ color:var(--muted); display:block; margin-top:8px; font-size:13px; }
+  input, select, textarea, button{ width:100%; padding:8px; margin-top:6px; border-radius:8px; border:1px solid rgba(255,255,255,0.04); background:#0b0b0b; color:var(--white); }
+  .row{ display:flex; gap:8px; }
+  .col{ flex:1; }
+  .btnGold{ background:linear-gradient(90deg,var(--gold),#ffd87a); color:#111; border:0; padding:8px 10px; cursor:pointer; font-weight:700; border-radius:8px; }
+  .btnRed{ background:var(--danger); color:#fff; border:0; padding:8px 10px; border-radius:8px; cursor:pointer; }
+  table{ width:100%; border-collapse:collapse; margin-top:8px; color:var(--white); }
+  th,td{ padding:8px; border-bottom:1px solid rgba(255,255,255,0.03); text-align:left; font-size:14px; }
+  th{ color:var(--gold); }
+  .small{ font-size:13px; color:var(--muted); }
+  .status{ padding:8px; margin-top:8px; border-radius:8px; font-weight:700; text-align:center;}
+  .ok{ background:#073b1a; color:#8ef08e; }
+  .err{ background:#4b0f0f; color:#ff9b9b; }
+  @media(max-width:900px){ .row{ flex-direction:column; } }
 </style>
 </head>
 <body>
-<header>PFL Admin Dashboard</header>
-<div class="container">
-  
-  <label for="teamA">Team A:</label>
-  <input type="text" id="teamA" placeholder="Enter Team A name">
-  
-  <label for="teamB">Team B:</label>
-  <input type="text" id="teamB" placeholder="Enter Team B name">
-  
-  <label for="venue">Venue:</label>
-  <select id="venue">
-    <option value="Mainbowl">Mainbowl</option>
-    <option value="Maracana">Maracana</option>
-  </select>
-  
-  <label for="matchTime">Kick-off Date & Time:</label>
-  <input type="datetime-local" id="matchTime">
-  
-  <label for="scoreA">Team A Score (0-6):</label>
-  <input type="number" id="scoreA" min="0" max="6" value="0">
-  
-  <label for="scoreB">Team B Score (0-6):</label>
-  <input type="number" id="scoreB" min="0" max="6" value="0">
-  
-  <label for="status">Match Status:</label>
-  <select id="status">
-    <option value="upcoming">Upcoming</option>
-    <option value="live">Live</option>
-    <option value="ended">Ended</option>
-  </select>
-  
-  <button id="goLive" onclick="toggleLive()">Go Live</button>
-  <button id="saveBtn" onclick="saveData()">Save Update</button>
-  
-  <div class="live-summary" id="liveSummary">
-    <h3>Current Match Summary</h3>
-    <p id="summaryText">No match selected yet.</p>
+<header>Pinnacle Football League — Admin (Auto Publish)</header>
+<div class="wrap">
+
+  <!-- Login -->
+  <div id="loginCard" class="card">
+    <h3 style="margin:0;color:var(--gold)">Admin Login</h3>
+    <div class="small">Enter admin password to unlock (stored locally).</div>
+    <label>Password</label>
+    <input id="pw" type="password" placeholder="Password">
+    <button id="pwBtn" class="btnGold">Unlock</button>
+    <div id="loginMsg" class="status" style="display:none"></div>
   </div>
+
+  <!-- Dashboard -->
+  <div id="dashboard" style="display:none">
+    <div class="card">
+      <h3 style="margin:0;color:var(--gold)">Quick actions</h3>
+      <div class="small">Edit fields below and click <strong>Publish to GitHub</strong> to update live site automatically.</div>
+      <div style="display:flex;gap:8px;margin-top:8px;">
+        <button id="btnReload" class="btnGold">Reload remote data.json</button>
+        <button id="btnExport" class="btnGold">Export JSON (copy)</button>
+      </div>
+      <div id="opMsg" class="status" style="display:none"></div>
+    </div>
+
+    <div class="card">
+      <h3 style="margin:0;color:var(--gold)">Create / Edit Fixture</h3>
+      <div class="row">
+        <div class="col"><label>Team A</label><input id="teamA" placeholder="Team A"></div>
+        <div class="col"><label>Team B</label><input id="teamB" placeholder="Team B"></div>
+      </div>
+      <div class="row">
+        <div class="col"><label>Venue</label>
+          <select id="venue"><option value="Mainbowl">Mainbowl</option><option value="Maracana">Maracana</option></select>
+        </div>
+        <div class="col"><label>Date</label><input id="mDate" type="date"></div>
+        <div class="col"><label>Time</label><input id="mTime" type="time"></div>
+      </div>
+      <div class="row">
+        <div class="col"><label>Score A (0–6)</label><select id="scoreA">${[0,1,2,3,4,5,6].map(n=>`<option value="${n}">${n}</option>`).join('')}</select></div>
+        <div class="col"><label>Score B (0–6)</label><select id="scoreB">${[0,1,2,3,4,5,6].map(n=>`<option value="${n}">${n}</option>`).join('')}</select></div>
+        <div class="col"><label>Status</label>
+          <select id="statusSel"><option value="upcoming">Upcoming</option><option value="live">Live</option><option value="ended">Ended</option></select>
+        </div>
+      </div>
+      <div style="display:flex;gap:8px;margin-top:8px;">
+        <button id="btnAdd" class="btnGold">Add Fixture</button>
+        <button id="btnSave" class="btnGold">Save Selected</button>
+        <button id="btnPublish" class="btnGold">Publish to GitHub</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3 style="margin:0;color:var(--gold)">Fixtures — edit scores & go live</h3>
+      <div class="small">Live match automatically moves to top on fans page.</div>
+      <div id="fixturesWrap"></div>
+    </div>
+
+    <div class="card">
+      <h3 style="margin:0;color:var(--gold)">JSON Preview (will be pushed)</h3>
+      <div class="small">Review before publishing. Publishing will update <code>data.json</code> in your repo's main branch.</div>
+      <textarea id="jsonPreview" rows="10" style="background:#0a0a0a;color:var(--muted)"></textarea>
+    </div>
+  </div>
+
 </div>
 
 <script>
-let live = false;
+/* ---------- CONFIG (edit only the token line) ---------- */
+const REPO_OWNER = 'rowlandmayowa527-ai';
+const REPO_NAME = 'pfl-livescore-center';
+const FILE_PATH = 'data.json';
+const BRANCH = 'main';
+const GITHUB_TOKEN = 'PASTE_YOUR_TOKEN_HERE'; // <-- Paste your PAT here (keep private)
 
-function toggleLive(){
-  const status = document.getElementById('status');
-  live = !live;
-  if(live){
-    status.value = 'live';
-    document.getElementById('goLive').style.background='green';
-    document.getElementById('goLive').innerText='End Match';
-  } else {
-    status.value = 'ended';
-    document.getElementById('goLive').style.background='red';
-    document.getElementById('goLive').innerText='Go Live';
+/* ---------- password (local) ---------- */
+const ADMIN_PW = 'Rowland12#';
+
+/* ---------- helpers ---------- */
+function showOp(msg, ok=true){
+  const el = document.getElementById('opMsg'); el.style.display='block'; el.textContent=msg; el.className = 'status ' + (ok? 'ok':'err');
+  setTimeout(()=>el.style.display='none',3000);
+}
+function uid(){ return 'm'+Date.now().toString(36); }
+function b64enc(s){ return btoa(unescape(encodeURIComponent(s))); }
+function b64dec(s){ return decodeURIComponent(escape(atob(s))); }
+
+/* ---------- model ---------- */
+let model = null;
+
+/* fetch remote */
+async function loadRemote(){
+  try{
+    const r = await fetch(`https://raw.githubusercontent.com/${REPO_OWNER}/${REPO_NAME}/${BRANCH}/${FILE_PATH}?cachebust=${Date.now()}`);
+    if(!r.ok) throw new Error('No remote');
+    model = await r.json();
+    renderAll();
+    showOp('Loaded remote data.json');
+  }catch(e){
+    console.warn(e);
+    model = { meta:{competition:'Pinnacle Football League',organiser:'Arcane Override Games',updatedAt:new Date().toISOString()}, live:null, fixtures:[], archive:[], predictions:[], comments:[], players:{} };
+    renderAll();
+    showOp('Loaded default model (no remote)', false);
   }
-  updateSummary();
 }
 
-function updateSummary(){
-  const teamA = document.getElementById('teamA').value || 'Team A';
-  const teamB = document.getElementById('teamB').value || 'Team B';
-  const scoreA = document.getElementById('scoreA').value;
-  const scoreB = document.getElementById('scoreB').value;
+/* render */
+function renderAll(){
+  document.getElementById('jsonPreview').value = JSON.stringify(model, null, 2);
+  renderFixturesList();
+}
+
+/* fixtures list */
+function renderFixturesList(){
+  const wrap = document.getElementById('fixturesWrap');
+  const arr = (model.fixtures||[]).slice();
+  // sort: live first, then date/time
+  arr.sort((a,b)=>{
+    if(a.status==='live' && b.status!=='live') return -1;
+    if(b.status==='live' && a.status!=='live') return 1;
+    return new Date(a.date+' '+(a.time||'')) - new Date(b.date+' '+(b.time||''));
+  });
+  if(!arr.length){ wrap.innerHTML = '<div class="small">No fixtures</div>'; return; }
+  let html = '<table><thead><tr><th>Date</th><th>Fixture</th><th>Score</th><th>Venue</th><th>Status</th><th>Actions</th></tr></thead><tbody>';
+  for(const f of arr){
+    html += `<tr>
+      <td>${f.date} ${f.time||''}</td>
+      <td>${f.home} vs ${f.away}</td>
+      <td>
+        <select id="sA_${f.id}">${[0,1,2,3,4,5,6].map(n=>`<option ${n===f.homeScore? 'selected':''} value="${n}">${n}</option>`).join('')}</select>
+        -
+        <select id="sB_${f.id}">${[0,1,2,3,4,5,6].map(n=>`<option ${n===f.awayScore? 'selected':''} value="${n}">${n}</option>`).join('')}</select>
+      </td>
+      <td>${f.venue||''}</td>
+      <td id="st_${f.id}">${f.status}</td>
+      <td>
+        <button onclick="saveScore('${f.id}')" class="btnGold">Save</button>
+        <button onclick="toggleLive('${f.id}')" style="margin-left:8px" class="${f.status==='live'?'btnRed':''}">${f.status==='live'?'End':'Go Live'}</button>
+        <button onclick="loadToForm('${f.id}')" style="margin-left:8px">Edit</button>
+        <button onclick="deleteFixture('${f.id}')" style="margin-left:8px">Delete</button>
+      </td>
+    </tr>`;
+  }
+  html += '</tbody></table>';
+  wrap.innerHTML = html;
+}
+
+/* load selected fixture into form */
+function loadToForm(id){
+  const f = (model.fixtures||[]).find(x=>x.id===id);
+  if(!f) return alert('Not found');
+  document.getElementById('teamA').value = f.home;
+  document.getElementById('teamB').value = f.away;
+  document.getElementById('venue').value = f.venue || 'Mainbowl';
+  document.getElementById('mDate').value = f.date;
+  document.getElementById('mTime').value = f.time || '';
+  document.getElementById('scoreA').value = f.homeScore || 0;
+  document.getElementById('scoreB').value = f.awayScore || 0;
+  document.getElementById('statusSel').value = f.status || 'upcoming';
+  // mark selected by storing id on Save button
+  document.getElementById('btnSave').dataset.editId = f.id;
+  showOp('Loaded fixture into form for editing');
+}
+
+/* add fixture */
+document.getElementById('btnAdd').addEventListener('click', ()=>{
+  const home = document.getElementById('teamA').value.trim();
+  const away = document.getElementById('teamB').value.trim();
   const venue = document.getElementById('venue').value;
-  const time = document.getElementById('matchTime').value || 'TBD';
-  const status = document.getElementById('status').value;
-  document.getElementById('summaryText').innerHTML =
-    `<strong>${teamA} ${scoreA} - ${scoreB} ${teamB}</strong><br>
-    Venue: ${venue}<br>
-    Kick-off: ${time}<br>
-    Status: ${status.toUpperCase()}`;
-}
-
-function saveData(){
-  const matchData = {
-    teamA: document.getElementById('teamA').value,
-    teamB: document.getElementById('teamB').value,
-    venue: document.getElementById('venue').value,
-    kickOff: document.getElementById('matchTime').value,
-    scoreA: document.getElementById('scoreA').value,
-    scoreB: document.getElementById('scoreB').value,
-    status: document.getElementById('status').value
-  };
-  
-  // Convert to JSON string
-  const json = JSON.stringify(matchData, null, 2);
-  
-  // Download as data.json manually
-  const blob = new Blob([json], {type: "application/json"});
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = "data.json";
-  a.click();
-  URL.revokeObjectURL(url);
-  
-  alert("Match data saved! Upload this data.json to your Netlify site to update live.");
-}
-
-// Update live summary automatically when inputs change
-document.querySelectorAll('input, select').forEach(el => {
-  el.addEventListener('input', updateSummary);
+  const date = document.getElementById('mDate').value;
+  const time = document.getElementById('mTime').value;
+  if(!home || !away || !date) return alert('Team A, Team B and Date are required');
+  const f = { id: uid(), date, time, home, away, venue, status:document.getElementById('statusSel').value, homeScore:Number(document.getElementById('scoreA').value||0), awayScore:Number(document.getElementById('scoreB').value||0) };
+  model.fixtures = model.fixtures || [];
+  model.fixtures.push(f);
+  model.meta.updatedAt = new Date().toISOString();
+  renderAll();
+  showOp('Fixture added (remember to Publish)');
 });
+
+/* save selected edit */
+document.getElementById('btnSave').addEventListener('click', ()=>{
+  const id = document.getElementById('btnSave').dataset.editId;
+  if(!id) return showOp('No fixture selected to save', false);
+  const f = (model.fixtures||[]).find(x=>x.id===id);
+  if(!f) return showOp('fixture not found', false);
+  f.home = document.getElementById('teamA').value.trim();
+  f.away = document.getElementById('teamB').value.trim();
+  f.venue = document.getElementById('venue').value;
+  f.date = document.getElementById('mDate').value;
+  f.time = document.getElementById('mTime').value;
+  f.homeScore = Number(document.getElementById('scoreA').value||0);
+  f.awayScore = Number(document.getElementById('scoreB').value||0);
+  f.status = document.getElementById('statusSel').value;
+  model.meta.updatedAt = new Date().toISOString();
+  renderAll();
+  showOp('Fixture updated (remember to Publish)');
+  delete document.getElementById('btnSave').dataset.editId;
+});
+
+/* save score from table controls */
+function saveScore(id){
+  const f = (model.fixtures||[]).find(x=>x.id===id);
+  if(!f) return showOp('Fixture not found', false);
+  f.homeScore = Number(document.getElementById('sA_'+id).value||0);
+  f.awayScore = Number(document.getElementById('sB_'+id).value||0);
+  model.meta.updatedAt = new Date().toISOString();
+  renderAll();
+  showOp('Score saved in model. Publish to push to GitHub.');
+}
+
+/* delete*/
+function deleteFixture(id){
+  if(!confirm('Delete fixture?')) return;
+  model.fixtures = (model.fixtures||[]).filter(x=>x.id!==id);
+  model.meta.updatedAt = new Date().toISOString();
+  renderAll();
+  showOp('Fixture removed (remember to Publish)', true);
+}
+
+/* toggle live/ended */
+function toggleLive(id){
+  const f = (model.fixtures||[]).find(x=>x.id===id);
+  if(!f) return;
+  if(f.status === 'live'){
+    f.status = 'ended';
+    // push to archive
+    model.archive = model.archive || [];
+    model.archive.push({...f, endedAt:new Date().toISOString()});
+    model.live = null;
+  } else {
+    // end any other live
+    (model.fixtures||[]).forEach(x=>{ if(x.status==='live') x.status='ended'; });
+    f.status = 'live';
+    // set model.live
+    model.live = { id: f.id, home: f.home, away: f.away, homeScore: f.homeScore||0, awayScore: f.awayScore||0, timestamp: new Date().toISOString() };
+  }
+  model.meta.updatedAt = new Date().toISOString();
+  renderAll();
+  showOp('Live toggled (remember to Publish)', true);
+}
+
+/* --------- Publish to GitHub using token ---------- */
+document.getElementById('btnPublish').addEventListener('click', async ()=>{
+  if(!confirm('Publish current JSON to GitHub data.json? This will overwrite the file in your repo.')) return;
+  try{
+    const apiUrl = `https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/${FILE_PATH}`;
+    // get current file to obtain sha
+    const getRes = await fetch(apiUrl + `?ref=${BRANCH}`, { headers: { Authorization: `token ${GITHUB_TOKEN}` } });
+    let sha = null;
+    if(getRes.ok){
+      const data = await getRes.json();
+      sha = data.sha;
+    }
+    const content = JSON.stringify(model, null, 2);
+    const body = { message: `Update data.json — ${new Date().toISOString()}`, content: b64enc(content), branch: BRANCH };
+    if(sha) body.sha = sha;
+    const putRes = await fetch(apiUrl, {
+      method: 'PUT',
+      headers: { Authorization: `token ${GITHUB_TOKEN}`, 'Content-Type':'application/json' },
+      body: JSON.stringify(body)
+    });
+    if(putRes.ok){
+      showOp('Published to GitHub successfully', true);
+      // reload remote to reflect exact file
+      setTimeout(loadRemote, 1200);
+    } else {
+      const txt = await putRes.text();
+      showOp('Publish failed: ' + (txt.slice(0,200)), false);
+    }
+  }catch(e){
+    console.error(e);
+    showOp('Publish error: ' + e.message, false);
+  }
+});
+
+/* export (copy) */
+document.getElementById('btnExport').addEventListener('click', ()=>{
+  const txt = JSON.stringify(model, null, 2);
+  navigator.clipboard.writeText(txt).then(()=> showOp('JSON copied. Paste into GitHub → data.json → Commit', true), ()=> { document.getElementById('jsonPreview').value = txt; showOp('Could not auto-copy — JSON is in preview box', false); });
+});
+
+/* reload */
+document.getElementById('btnReload').addEventListener('click', loadRemote);
+
+/* login handling */
+document.getElementById('pwBtn').addEventListener('click', ()=>{
+  const v = document.getElementById('pw').value;
+  if(v === ADMIN_PW){
+    document.getElementById('loginCard').style.display='none';
+    document.getElementById('dashboard').style.display='block';
+    loadRemote();
+  } else {
+    const el = document.getElementById('loginMsg'); el.style.display='block'; el.textContent='Wrong password'; el.className='status err';
+    setTimeout(()=>el.style.display='none',2000);
+  }
+});
+
+/* initial */
+renderAll();
 </script>
 </body>
 </html>
