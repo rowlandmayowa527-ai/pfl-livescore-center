@@ -1,267 +1,288 @@
-<!DOCTYPE html>
-<html>
+<!doctype html>
+<html lang="en">
 <head>
-  <title>PFL Admin Panel - Round 1</title>
-  <style>
-    body { font-family: sans-serif; background:#000; color:#fff; padding:20px;}
-    input, button, textarea, select { width:100%; margin:5px 0; padding:8px; }
-    label { margin-top:10px; display:block; }
-    h2, h3 { color: gold; }
-    hr { border-color: #444; }
-  </style>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>PFL Admin — Publish to GitHub (optional)</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;600;800&display=swap" rel="stylesheet">
+<style>
+  :root{ --bg:#060606; --card:#0b0b0b; --gold:#d4af37; --muted:#bfc6cc; --white:#fff; }
+  *{box-sizing:border-box}
+  body{ margin:0; font-family:Inter,system-ui,Arial; background:var(--bg); color:var(--white); }
+  header{ padding:14px; border-bottom:1px solid rgba(255,255,255,0.03); display:flex; align-items:center; justify-content:space-between;}
+  header h1{ margin:0; color:var(--gold); font-size:18px; }
+  .wrap{ max-width:1100px; margin:12px auto; padding:12px; display:grid; gap:12px; }
+  .card{ background:linear-gradient(180deg, rgba(255,255,255,0.01), rgba(255,255,255,0.02)); padding:12px; border-radius:12px; border:1px solid rgba(255,255,255,0.03); }
+  label{ display:block; color:var(--muted); margin-top:8px; font-size:13px; }
+  input, select, textarea { width:100%; padding:8px; border-radius:8px; background:transparent; color:var(--white); border:1px solid rgba(255,255,255,0.04); }
+  .row{ display:flex; gap:8px; flex-wrap:wrap; margin-top:8px; }
+  .col{ flex:1; min-width:120px; }
+  button{ padding:8px 12px; border-radius:8px; border:0; cursor:pointer; font-weight:800; }
+  .btnGold{ background:linear-gradient(90deg,var(--gold),#ffd87a); color:#111; }
+  .btnGhost{ background:transparent; color:var(--white); border:1px solid rgba(255,255,255,0.04); }
+  .small{ color:var(--muted); font-size:13px; }
+  pre{ background:#0a0a0a; padding:10px; overflow:auto; max-height:260px; color:var(--muted); }
+</style>
 </head>
 <body>
-  <h2>PFL Admin Panel - Round 1</h2>
+<header>
+  <div>
+    <h1>Pinnacle Football League — Admin</h1>
+    <div class="small">Arcane Override Games</div>
+  </div>
+  <div>
+    <button class="btnGhost" id="btnUnlock">Unlock (password)</button>
+  </div>
+</header>
 
-  <h3>Live Match Input</h3>
-  <label>Select Match:</label>
-  <select id="matchSelect"></select>
+<div class="wrap">
 
-  <label>Home Score:</label>
-  <input type="number" id="homeScore" value="0">
-
-  <label>Away Score:</label>
-  <input type="number" id="awayScore" value="0">
-
-  <label>Substitutions / Notes (one per line):</label>
-  <textarea id="subs" rows="3"></textarea>
-
-  <label>Home Form (W/D/L):</label>
-  <input type="text" id="homeForm">
-
-  <label>Away Form:</label>
-  <input type="text" id="awayForm">
-
-  <label>Home Player Ratings (Player1-8,Player2-7,...):</label>
-  <input type="text" id="homeRatings">
-
-  <label>Away Player Ratings:</label>
-  <input type="text" id="awayRatings">
-
-  <label>Home Goals / Assists / Yellow Cards / Red Cards (format: goals,assists,yellow,red):</label>
-  <input type="text" id="homeStats">
-
-  <label>Away Goals / Assists / Yellow Cards / Red Cards:</label>
-  <input type="text" id="awayStats">
-
-  <h3>Next Fixtures</h3>
-  <div id="fixturesContainer"></div>
-
-  <button onclick="saveMatch()">Save Match / Update Fixture</button>
-
-<script>
-// Round 1 Fixtures - 7 teams, 4 matches
-const round1Fixtures = [
-  { date: "2025-10-28", time: "14:00", home: "Blue Blazzers", away: "Dark Art FC", venue: "Mainbowl Stadium" },
-  { date: "2025-10-28", time: "15:00", home: "Infinity FC", away: "Dynamos FC", venue: "Mainbowl Stadium" },
-  { date: "2025-10-28", time: "16:00", home: "Shooting Stars", away: "FET 21/26", venue: "Mainbowl Stadium" },
-  { date: "2025-10-28", time: "17:00", home: "Courage FC", away: "TBD", venue: "Mainbowl Stadium" }
-];
-
-// Save fixtures to localStorage
-localStorage.setItem('nextFixtures', JSON.stringify(round1Fixtures));
-
-// Populate match select
-const matchSelect=document.getElementById('matchSelect');
-round1Fixtures.forEach((m,i)=>{
-  matchSelect.innerHTML+=`<option value="${i}">${m.home} vs ${m.away} - ${m.time}</option>`;
-});
-
-// Populate next fixtures container for display
-const fixturesContainer=document.getElementById('fixturesContainer');
-round1Fixtures.forEach(f=>{
-  fixturesContainer.innerHTML+=`<div>${f.date} | ${f.time} | ${f.home} vs ${f.away} | Venue: ${f.venue}</div><hr>`;
-});
-
-// Save match to localStorage
-function saveMatch(){
-  const idx=matchSelect.value;
-  const matchData={
-    homeTeam: round1Fixtures[idx].home,
-    awayTeam: round1Fixtures[idx].away,
-    homeScore: parseInt(document.getElementById('homeScore').value),
-    awayScore: parseInt(document.getElementById('awayScore').value),
-    subs: document.getElementById('subs').value.split('\n'),
-    homeForm: document.getElementById('homeForm').value,
-    awayForm: document.getElementById('awayForm').value,
-    homeRatings: document.getElementById('homeRatings').value.split(','),
-    awayRatings: document.getElementById('awayRatings').value.split(','),
-    homeStats: document.getElementById('homeStats').value.split(',').map(Number),
-    awayStats: document.getElementById('awayStats').value.split(',').map(Number),
-    timestamp: new Date().toISOString()
-  };
-
-  // Save current match
-  localStorage.setItem('currentMatch', JSON.stringify(matchData));
-
-  // Archive match
-  let archive=JSON.parse(localStorage.getItem('matchArchive'))||[];
-  archive.push(matchData);
-  localStorage.setItem('matchArchive', JSON.stringify(archive));
-
-  alert('Match and fixtures saved ✅');
-}
-</script>
-</body>
-</html>  <input type="text" id="homeRatings">
-
-  <label>Away Player Ratings:</label>
-  <input type="text" id="awayRatings">
-
-  <label>Home Goals / Assists / Yellow Cards / Red Cards (format: goals,assists,yellow,red):</label>
-  <input type="text" id="homeStats">
-
-  <label>Away Goals / Assists / Yellow Cards / Red Cards:</label>
-  <input type="text" id="awayStats">
-
-  <h3>Next Fixture (optional)</h3>
-  <label>Home Team:</label>
-  <input type="text" id="nextHome">
-  <label>Away Team:</label>
-  <input type="text" id="nextAway">
-  <label>Match Date:</label>
-  <input type="date" id="nextDate">
-
-  <button onclick="updateMatch()">Save Match / Fixture</button>
-
-  <script>
-    function updateMatch() {
-      const matchData = {
-        homeTeam: document.getElementById('homeTeam').value,
-        awayTeam: document.getElementById('awayTeam').value,
-        homeScore: parseInt(document.getElementById('homeScore').value),
-        awayScore: parseInt(document.getElementById('awayScore').value),
-        subs: document.getElementById('subs').value.split('\n'),
-        homeForm: document.getElementById('homeForm').value,
-        awayForm: document.getElementById('awayForm').value,
-        homeRatings: document.getElementById('homeRatings').value.split(','),
-        awayRatings: document.getElementById('awayRatings').value.split(','),
-        homeStats: document.getElementById('homeStats').value.split(',').map(Number),
-        awayStats: document.getElementById('awayStats').value.split(',').map(Number),
-        timestamp: new Date().toISOString()
-      };
-
-      // Current match
-      localStorage.setItem('currentMatch', JSON.stringify(matchData));
-
-      // Archive match
-      let archive = JSON.parse(localStorage.getItem('matchArchive')) || [];
-      archive = archive.filter(m => m.timestamp !== matchData.timestamp);
-      archive.push(matchData);
-      localStorage.setItem('matchArchive', JSON.stringify(archive));
-
-      // Save next fixture
-      let fixtures = JSON.parse(localStorage.getItem('nextFixtures')) || [];
-      const nextHome = document.getElementById('nextHome').value;
-      const nextAway = document.getElementById('nextAway').value;
-      const nextDate = document.getElementById('nextDate').value;
-      if(nextHome && nextAway && nextDate){
-        fixtures.push({home: nextHome, away: nextAway, date: nextDate});
-        localStorage.setItem('nextFixtures', JSON.stringify(fixtures));
-      }
-
-      alert('Match and fixture saved ✅');
-    }
-  </script>
-</body>
-</html>
-        <div class="row">
-          <div style="flex:1">
-            <label class="muted">Home logo</label>
-            <input id="homeLogoFile" type="file" accept="image/*" />
-          </div>
-          <div style="flex:1">
-            <label class="muted">Away logo</label>
-            <input id="awayLogoFile" type="file" accept="image/*" />
-          </div>
-        </div>
-
-        <div style="display:flex; gap:8px; margin-top:6px;">
-          <button id="createMatchBtn" class="primary">Create Match</button>
-          <button id="refreshMatches" class="small">Refresh</button>
-        </div>
-      </div>
+  <div class="card">
+    <h3 style="margin:0;color:var(--gold)">Repository / Data Settings</h3>
+    <label>GitHub Raw data URL</label>
+    <input id="rawUrl" value="https://raw.githubusercontent.com/rowlandmayowa527-ai/pfl-livescore-center/main/data.json">
+    <div class="small">Keep this pointing to your <code>data.json</code> raw path. The public index fetches from here.</div>
+    <label style="margin-top:8px">Repo details (for auto-publish)</label>
+    <div class="row">
+      <input id="ghOwner" class="col" placeholder="GitHub owner (username)" value="rowlandmayowa527-ai">
+      <input id="ghRepo" class="col" placeholder="Repo name" value="pfl-livescore-center">
+    </div>
+    <div class="row">
+      <input id="ghBranch" class="col" placeholder="Branch" value="main">
+      <input id="filePath" class="col" placeholder="File path" value="data.json">
     </div>
   </div>
 
   <div class="card">
-    <div class="muted">Matches</div>
-    <div class="match-list" id="matchList"></div>
+    <h3 style="margin:0;color:var(--gold)">Quick: Round 1 Fixtures</h3>
+    <div class="small">You can edit fixtures below. Default Round 1 is preloaded.</div>
+    <label>Fixtures (one per line: date,time,home,away,venue)</label>
+    <textarea id="fixturesText" rows="4"></textarea>
+    <div style="margin-top:8px;"><button class="btnGold" id="btnLoadFixtures">Load into editor</button></div>
   </div>
 
-  <div class="card" id="matchEditorCard" style="display:none;">
-    <div style="display:flex; justify-content:space-between; align-items:center;">
-      <div id="editingTitle" style="font-weight:800;">Editing match</div>
-      <div style="display:flex; gap:8px;">
-        <button id="setLiveBtn" class="primary small">Set Live</button>
-        <button id="endMatchBtn" class="small">End Match</button>
+  <div class="card">
+    <h3 style="margin:0;color:var(--gold)">Live Match Editor</h3>
+    <div class="small">Choose a fixture then Set Live to publish it to <code>data.json</code>.</div>
+
+    <label>Select fixture</label>
+    <select id="selectFixture"></select>
+
+    <div class="row">
+      <div class="col">
+        <label>Home score</label>
+        <input id="homeScore" type="number" min="0" value="0">
+      </div>
+      <div class="col">
+        <label>Away score</label>
+        <input id="awayScore" type="number" min="0" value="0">
       </div>
     </div>
 
-    <div style="margin-top:10px;">
-      <div class="row">
-        <div style="flex:1">
-          <div class="muted">Home</div>
-          <div><input id="editHomeName" /></div>
-          <div class="muted">Score</div>
-          <div><input id="editHomeScore" type="number" min="0" /></div>
-        </div>
-        <div style="flex:1">
-          <div class="muted">Away</div>
-          <div><input id="editAwayName" /></div>
-          <div class="muted">Score</div>
-          <div><input id="editAwayScore" type="number" min="0" /></div>
-        </div>
-      </div>
+    <label>Substitutions / Notes (one per line)</label>
+    <textarea id="liveSubs" rows="3"></textarea>
 
-      <div style="margin-top:8px;">
-        <div class="muted">Add event (minute + description)</div>
-        <div class="row" style="margin-top:6px;">
-          <input id="evtMinute" placeholder="e.g. 23 or 45+2" />
-          <input id="evtDesc" placeholder="Player X - Goal" style="flex:1" />
-          <select id="evtTeam">
-            <option value="">Match</option>
-            <option value="A">Home</option>
-            <option value="B">Away</option>
-          </select>
-          <button id="addEventBtn" class="primary">Add</button>
-        </div>
+    <label>Home ratings (Player-Score, comma separated)</label>
+    <input id="homeRatings" type="text">
+    <label>Away ratings</label>
+    <input id="awayRatings" type="text">
 
-        <div style="margin-top:10px;">
-          <div class="muted">Events (most recent first)</div>
-          <div id="evtList" style="max-height:180px; overflow:auto; margin-top:6px;"></div>
-        </div>
-
-        <div style="display:flex; gap:8px; margin-top:10px;">
-          <button id="saveMatchBtn" class="primary">Save changes</button>
-          <button id="deleteMatchBtn" class="small">Delete match</button>
-        </div>
-      </div>
+    <div style="margin-top:10px;" class="row">
+      <button class="btnGold" id="btnSetLive">Set Live</button>
+      <button class="btnGhost" id="btnUpdateLive">Update Live</button>
+      <button class="btnGhost" id="btnEndAndArchive">End & Archive</button>
     </div>
+  </div>
+
+  <div class="card">
+    <h3 style="margin:0;color:var(--gold)">Data JSON (preview / export / publish)</h3>
+    <div class="small">Edit locally, then Export or Publish to GitHub (optional token required).</div>
+    <pre id="jsonPreview">Loading data…</pre>
+    <div style="display:flex; gap:8px; margin-top:8px;">
+      <button class="btnGold" id="btnExport">Export JSON (copy)</button>
+      <button class="btnGhost" id="btnImport">Import JSON (paste)</button>
+      <button class="btnGhost" id="btnPublish">Publish to GitHub (optional)</button>
+    </div>
+    <div style="margin-top:8px;" class="small">If you publish, you'll be asked for a GitHub token (use a token you create & keep private). You can also update data.json manually in GitHub.</div>
+  </div>
+
+  <div class="card">
+    <h3 style="margin:0;color:var(--gold)">Archive & Helpers</h3>
+    <div class="small">Archive shows saved matches and allows lightweight editing.</div>
+    <div id="archivePreview" class="small">No archive loaded</div>
   </div>
 
 </div>
 
-<script type="module">
-  import { listenMatches, pushMatch, updateMatch, uploadLogoFile, getMatchOnce } from './firebase.js';
+<script>
+/* Admin logic (no server required). Works with data.json in your repo. */
+/* Local edit model */
+let model = null;
+const DEFAULT_RAW = document.getElementById('rawUrl').value;
 
-  // Admin password (client-side): Rowland12#
-  const ADMIN_PASS = 'Rowland12#';
+/* helpers */
+function b64Encode(str){ return btoa(unescape(encodeURIComponent(str))); }
+function b64Decode(str){ return decodeURIComponent(escape(atob(str))); }
 
-  const passInput = document.getElementById('passInput');
-  const unlockBtn = document.getElementById('unlockBtn');
-  const adminControls = document.getElementById('adminControls');
-  const matchList = document.getElementById('matchList');
-  const matchEditorCard = document.getElementById('matchEditorCard');
+/* load remote data.json preview */
+async function loadRemote(){
+  const url = document.getElementById('rawUrl').value.trim() || DEFAULT_RAW;
+  try{
+    const r = await fetch(url + '?cachebust=' + Date.now());
+    if(!r.ok) throw new Error('no remote data');
+    model = await r.json();
+  }catch(e){
+    // fall back to default if remote missing
+    if(!model) model = { meta:{competition:'Pinnacle Football League', organiser:'Arcane Override Games', updatedAt:new Date().toISOString()}, live:null, fixtures:[], archive:[], predictions:[], comments:[], players:{} };
+  }
+  refreshUI();
+}
 
-  const homeName = document.getElementById('homeName');
-  const awayName = document.getElementById('awayName');
-  const homeCoach = document.getElementById('homeCoach');
-  const awayCoach = document.getElementById('awayCoach');
-  const homePlayers = document.getElementById('homePlayers');
-  const awayPlayers = document.getElementById('awayPlayers');
-  const homeLogoFile = document.getElementById('homeLogoFile');
-  const awayLogoFile = document.getElementById('awayLogoFile');
+/* refresh UI from model */
+function refreshUI(){
+  document.getElementById('jsonPreview').innerText = JSON.stringify(model, null, 2);
+  // populate fixtures select and fixturesText
+  const sel = document.getElementById('selectFixture');
+  sel.innerHTML = '<option value="">-- pick --</option>';
+  document.getElementById('fixturesText').value = (model.fixtures||[]).map(f => `${f.date},${f.time},${f.home},${f.away},${f.venue}`).join('\\n');
+  (model.fixtures||[]).forEach((f,i)=> sel.innerHTML += `<option value="${i}">${f.date} ${f.time} • ${f.home} vs ${f.away}</option>`);
+  // archive preview
+  document.getElementById('archivePreview').innerText = (model.archive||[]).slice().reverse().map(m => `${m.homeTeam} ${m.homeScore}:${m.awayScore} ${m.awayTeam} (${m.timestamp})`).slice(0,10).join('\\n') || 'No archived matches';
+}
+
+/* load default remote on start */
+loadRemote();
+
+/* fixtures load button */
+document.getElementById('btnLoadFixtures').addEventListener('click', ()=>{
+  const lines = document.getElementById('fixturesText').value.trim().split('\\n').map(l=>l.trim()).filter(Boolean);
+  const arr = lines.map(line => {
+    const parts = line.split(',').map(s=>s.trim());
+    return { date: parts[0]||'', time: parts[1]||'', home: parts[2]||'', away: parts[3]||'', venue: parts[4]||'' };
+  });
+  model.fixtures = arr;
+  model.meta.updatedAt = new Date().toISOString();
+  refreshUI();
+});
+
+/* set live */
+document.getElementById('btnSetLive').addEventListener('click', ()=>{
+  const idx = document.getElementById('selectFixture').value;
+  if(idx === '') return alert('Pick a fixture');
+  const f = model.fixtures[idx];
+  if(!f) return alert('Missing fixture');
+  model.live = {
+    homeTeam: f.home,
+    awayTeam: f.away,
+    homeScore: Number(document.getElementById('homeScore').value||0),
+    awayScore: Number(document.getElementById('awayScore').value||0),
+    subs: (document.getElementById('liveSubs').value||'').split('\\n').filter(Boolean),
+    homeRatings: (document.getElementById('homeRatings').value||'').split(',').map(s=>s.trim()).filter(Boolean),
+    awayRatings: (document.getElementById('awayRatings').value||'').split(',').map(s=>s.trim()).filter(Boolean),
+    homeCoach: f.homeCoach || '',
+    awayCoach: f.awayCoach || '',
+    status: 'live',
+    timestamp: new Date().toISOString(),
+    fixtureId: f.id || null
+  };
+  model.meta.updatedAt = new Date().toISOString();
+  refreshUI();
+  alert('Live match set in editor. Use Publish to push to GitHub or Export to copy JSON.');
+});
+
+/* update live without changing fixture */
+document.getElementById('btnUpdateLive').addEventListener('click', ()=>{
+  if(!model.live) return alert('No live match set; use Set Live first.');
+  model.live.homeScore = Number(document.getElementById('homeScore').value||0);
+  model.live.awayScore = Number(document.getElementById('awayScore').value||0);
+  model.live.subs = (document.getElementById('liveSubs').value||'').split('\\n').filter(Boolean);
+  model.live.homeRatings = (document.getElementById('homeRatings').value||'').split(',').map(s=>s.trim()).filter(Boolean);
+  model.live.awayRatings = (document.getElementById('awayRatings').value||'').split(',').map(s=>s.trim()).filter(Boolean);
+  model.meta.updatedAt = new Date().toISOString();
+  refreshUI();
+  alert('Live updated locally.');
+});
+
+/* end & archive */
+document.getElementById('btnEndAndArchive').addEventListener('click', ()=>{
+  if(!model.live) return alert('No live match');
+  // add simple homeStats/awayStats placeholders if missing
+  if(!model.live.homeStats) model.live.homeStats = [model.live.homeScore||0,0,0,0];
+  if(!model.live.awayStats) model.live.awayStats = [model.live.awayScore||0,0,0,0];
+  model.archive = model.archive || [];
+  model.archive.push(model.live);
+  model.live = null;
+  model.meta.updatedAt = new Date().toISOString();
+  refreshUI();
+  alert('Match archived locally. Publish to push to GitHub if you want site to auto-update.');
+});
+
+/* export */
+document.getElementById('btnExport').addEventListener('click', ()=>{
+  const txt = JSON.stringify(model, null, 2);
+  navigator.clipboard.writeText(txt).then(()=> alert('JSON copied to clipboard — paste into GitHub data.json or share.'), ()=> {
+    // fallback: show in prompt
+    prompt('Copy JSON', txt);
+  });
+});
+
+/* import paste */
+document.getElementById('btnImport').addEventListener('click', ()=>{
+  const pasted = prompt('Paste JSON here to import (overwrites current editor data).');
+  if(!pasted) return;
+  try{
+    const obj = JSON.parse(pasted);
+    model = obj;
+    refreshUI();
+    alert('Imported.');
+  }catch(e){ alert('Invalid JSON'); }
+});
+
+/* Publish to GitHub (optional) */
+document.getElementById('btnPublish').addEventListener('click', async ()=>{
+  // ask for token
+  const token = prompt('Enter a GitHub Personal Access Token (repo scope). Leave empty to cancel.');
+  if(!token) return;
+  const owner = document.getElementById('ghOwner').value.trim();
+  const repo = document.getElementById('ghRepo').value.trim();
+  const branch = document.getElementById('ghBranch').value.trim() || 'main';
+  const path = document.getElementById('filePath').value.trim() || 'data.json';
+  if(!owner || !repo) return alert('Enter owner and repo.');
+
+  // fetch current file SHA (if exists)
+  const getUrl = `https://api.github.com/repos/${owner}/${repo}/contents/${path}`;
+  let sha = null;
+  try{
+    const res = await fetch(getUrl + `?ref=${branch}`, { headers: { Authorization: 'token ' + token } });
+    if(res.ok){
+      const j = await res.json();
+      sha = j.sha;
+    }
+  }catch(e){ console.error(e); }
+
+  const content = JSON.stringify(model, null, 2);
+  const body = { message: 'Update data.json via PFL admin', content: b64Encode(content), branch: branch };
+  if(sha) body.sha = sha;
+  const putRes = await fetch(getUrl, { method: 'PUT', headers: { Authorization: 'token ' + token, 'Content-Type':'application/json' }, body: JSON.stringify(body) });
+  if(putRes.ok){
+    alert('Published data.json to GitHub ✓');
+    // update rawUrl preview
+    loadRemote();
+  } else {
+    const err = await putRes.text();
+    alert('Publish failed: ' + err.slice(0,200));
+  }
+});
+
+/* unlock / simple password */
+document.getElementById('btnUnlock').addEventListener('click', ()=>{
+  const pw = prompt('Enter admin password');
+  const saved = localStorage.getItem('pfl_admin_pw') || 'Rowland12#';
+  if(pw === saved){ alert('Unlocked — you can edit now'); } else { alert('Wrong password'); }
+});
+</script>
+</body>
+</html>ElementById('awayLogoFile');
   const createMatchBtn = document.getElementById('createMatchBtn');
   const refreshMatches = document.getElementById('refreshMatches');
 
