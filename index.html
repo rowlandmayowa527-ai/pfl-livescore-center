@@ -1,40 +1,102 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Pinnacle Football League | LiveCenter</title>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;600;800&display=swap" rel="stylesheet">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PFL Live Scores</title>
 <style>
-  :root{ --bg:#050505; --card:#0c0c0c; --gold:#d4af37; --muted:#c3c6c8; --white:#fff; --danger:#ff4d4f;}
-  body{ margin:0; font-family:Inter,system-ui,Arial; background:var(--bg); color:var(--white); }
-  header{ padding:14px; background:linear-gradient(90deg,var(--gold),#ffd87a); color:#000; display:flex; justify-content:space-between; align-items:center; }
-  header h1{ margin:0; font-size:18px; }
-  main{ max-width:1100px; margin:12px auto; padding:12px; display:grid; gap:12px; grid-template-columns: 1fr 360px; }
-  .card{ background:var(--card); padding:12px; border-radius:10px; border:1px solid rgba(255,255,255,0.03); }
-  .liveRow{ display:flex; justify-content:space-between; align-items:center; }
-  .team{ font-weight:800; font-size:18px; }
-  .score{ font-size:40px; color:var(--gold); font-weight:900; min-width:80px; text-align:center; }
-  .goalFlash{ color:var(--danger) !important; transition:color .5s; }
-  table{ width:100%; border-collapse:collapse; margin-top:8px; color:var(--white); }
-  th,td{ padding:8px; border-bottom:1px solid rgba(255,255,255,0.03); text-align:left; }
-  th{ color:var(--gold); }
-  .small{ color:var(--muted); font-size:13px; }
-  footer{ text-align:center; color:var(--muted); padding:12px 0; }
-  @media(max-width:980px){ main{ grid-template-columns: 1fr; } .score{ font-size:32px; } }
+  body { font-family: Arial, sans-serif; background: #000; color: #fff; margin:0; padding:0;}
+  header { background: gold; color: black; text-align: center; padding: 15px; font-size: 1.5em; font-weight: bold;}
+  table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+  th, td { border: 1px solid gold; padding: 10px; text-align: center; }
+  th { background: gold; color: black; }
+  tr.live { background-color: red; color: white; font-weight: bold; }
+  tr:nth-child(even):not(.live) { background-color: #222; }
+  tr:nth-child(odd):not(.live) { background-color: #111; }
+  .goal { animation: flash 0.5s; }
+  @keyframes flash { 0% { background-color: yellow; } 100% { background-color: inherit; } }
+  @media(max-width:600px) {
+    table, tr, th, td { font-size: 0.9em; }
+  }
 </style>
 </head>
 <body>
-<header>
-  <h1>Pinnacle Football League Live Center | Powered by Arcane Override Games</h1>
-  <div class="small" id="lastUpdated">Updated: —</div>
-</header>
 
-<main>
-  <section class="card" id="liveCard">
-    <div id="liveArea" class="small">Loading live info…</div>
-  </section>
+<header>Pinnacle Football League - Live Scores</header>
 
+<audio id="goalSound">
+  <source src="https://actions.google.com/sounds/v1/cartoon/clang_and_wobble.ogg" type="audio/ogg">
+</audio>
+
+<table id="matchesTable">
+  <thead>
+    <tr>
+      <th>Home Team</th>
+      <th>Away Team</th>
+      <th>Venue</th>
+      <th>Time</th>
+      <th>Score</th>
+    </tr>
+  </thead>
+  <tbody>
+    <!-- Matches will be injected here -->
+  </tbody>
+</table>
+
+<script>
+const DATA_URL = 'https://raw.githubusercontent.com/rowlandmayowa527-ai/pfl-livescore-center/main/data.json';
+let lastScores = {}; // store previous scores
+
+async function loadMatches() {
+  try {
+    const res = await fetch(DATA_URL + `?t=${Date.now()}`); // prevent cache
+    const matches = await res.json();
+
+    const tbody = document.querySelector("#matchesTable tbody");
+    tbody.innerHTML = "";
+
+    matches.forEach(match => {
+      const row = document.createElement("tr");
+      if(match.live) row.classList.add("live");
+
+      // Goal detection
+      const prev = lastScores[match.id] || {homeScore:0, awayScore:0};
+      if(match.homeScore > prev.homeScore) flashGoal(row, 'home');
+      if(match.awayScore > prev.awayScore) flashGoal(row, 'away');
+
+      lastScores[match.id] = {homeScore: match.homeScore, awayScore: match.awayScore};
+
+      row.innerHTML = `
+        <td>${match.home}</td>
+        <td>${match.away}</td>
+        <td>${match.venue}</td>
+        <td>${match.time}</td>
+        <td>${match.homeScore} - ${match.awayScore}</td>
+      `;
+      tbody.appendChild(row);
+    });
+  } catch(e) {
+    console.error("Failed to load match data:", e);
+  }
+}
+
+function flashGoal(row, team) {
+  // Play goal sound
+  const sound = document.getElementById("goalSound");
+  sound.play().catch(()=>{}); // avoid errors if autoplay blocked
+
+  // Flash the row briefly
+  row.classList.add("goal");
+  setTimeout(() => row.classList.remove("goal"), 500);
+}
+
+// Auto-refresh every 10 seconds
+loadMatches();
+setInterval(loadMatches, 10000);
+</script>
+
+</body>
+</html>
   <aside>
     <div class="card" id="fixturesCard">
       <h3 style="margin:0;color:var(--gold)">Upcoming Fixtures</h3>
