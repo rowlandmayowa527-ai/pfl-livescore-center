@@ -1,40 +1,173 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>PFL Livescore Admin</title>
-<style>
-  body { font-family: Arial, sans-serif; margin:0; background:#111; color:#fff; }
-  header { background:#ffd700; padding:1rem; text-align:center; color:#000; font-weight:bold; }
-  main { display:flex; }
-  nav { width:250px; background:#222; padding:1rem; height:100vh; }
-  nav button { display:block; width:100%; margin:0.5rem 0; padding:0.5rem; background:#333; color:#fff; border:none; cursor:pointer; text-align:left; }
-  section { flex:1; padding:1rem; }
-  input, select, textarea { width:100%; margin:0.3rem 0; padding:0.5rem; }
-  button.save { background:#ffd700; color:#000; border:none; padding:0.5rem 1rem; cursor:pointer; font-weight:bold; }
-  h2 { color:#ffd700; }
-  .match-card { background:#222; padding:1rem; margin:1rem 0; border-left:5px solid #ffd700; }
-</style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PFL LiveScore Admin Panel</title>
+  <style>
+    body {
+      font-family: "Poppins", sans-serif;
+      background-color: #000;
+      color: #fff;
+      margin: 0;
+      padding: 0;
+    }
+
+    header {
+      background-color: #d4af37;
+      color: #000;
+      text-align: center;
+      padding: 1rem 0;
+      font-size: 1.5rem;
+      font-weight: bold;
+      letter-spacing: 1px;
+    }
+
+    .container {
+      max-width: 900px;
+      margin: 2rem auto;
+      background-color: #111;
+      padding: 2rem;
+      border-radius: 15px;
+      box-shadow: 0 0 15px #d4af37;
+    }
+
+    label {
+      font-weight: bold;
+      margin-top: 1rem;
+      display: block;
+      color: #d4af37;
+    }
+
+    input, textarea, select {
+      width: 100%;
+      padding: 10px;
+      margin-top: 5px;
+      border: none;
+      border-radius: 8px;
+      background: #222;
+      color: white;
+    }
+
+    textarea {
+      resize: vertical;
+    }
+
+    button {
+      background-color: #d4af37;
+      color: #000;
+      font-weight: bold;
+      border: none;
+      padding: 12px 20px;
+      margin-top: 15px;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: 0.3s;
+    }
+
+    button:hover {
+      background-color: #fff;
+      color: #000;
+    }
+
+    .status {
+      margin-top: 1rem;
+      padding: 10px;
+      border-radius: 8px;
+      text-align: center;
+      font-weight: bold;
+    }
+
+    .success { background: #064e3b; color: #0f0; }
+    .error { background: #4b0f0f; color: #f00; }
+
+    footer {
+      text-align: center;
+      padding: 1rem;
+      color: #aaa;
+      font-size: 0.9rem;
+    }
+  </style>
 </head>
 <body>
+  <header>PFL LiveScore Admin Center ⚽</header>
 
-<header>Pinnacle Football League - Admin Panel</header>
-<main>
-  <nav>
-    <button onclick="showSection('matches')">Matches</button>
-    <button onclick="showSection('teams')">Teams & Players</button>
-    <button onclick="showSection('comments')">Fan Comments</button>
-  </nav>
-  <section id="content">
-    <!-- Dynamic content injected here -->
-  </section>
-</main>
+  <div class="container">
+    <label for="adminName">Admin Name</label>
+    <input type="text" id="adminName" placeholder="Enter your name" required>
 
-<script type="module">
-import { GITHUB_USERNAME, REPO_NAME, FILE_PATH, BRANCH, TOKEN } from './config.js';
+    <label for="matchData">Match Data (JSON Format)</label>
+    <textarea id="matchData" rows="15" placeholder='Paste or edit your match data here...'></textarea>
 
-let dataJson = { matches: [], teams: [], comments: [] };
+    <label for="commitMessage">Commit Message</label>
+    <input type="text" id="commitMessage" placeholder="e.g., Updated Round 1 Results">
+
+    <button id="updateButton">Update Live Data</button>
+
+    <div id="statusBox" class="status"></div>
+  </div>
+
+  <footer>© 2025 Pinnacle Football League | Powered by Calculus</footer>
+
+  <script>
+    const button = document.getElementById('updateButton');
+    const statusBox = document.getElementById('statusBox');
+
+    button.addEventListener('click', async () => {
+      const adminName = document.getElementById('adminName').value.trim();
+      const matchData = document.getElementById('matchData').value.trim();
+      const commitMessage = document.getElementById('commitMessage').value.trim() || 'PFL data update';
+
+      if (!adminName || !matchData) {
+        statusBox.textContent = 'Please fill in all required fields.';
+        statusBox.className = 'status error';
+        return;
+      }
+
+      try {
+        const repo = 'pfl-livescore-center';
+        const owner = 'rowlandmayowa527-ai';
+        const token = 'YOUR_PERSONAL_ACCESS_TOKEN_HERE'; // 🟡 Replace this line only once!
+
+        const filePath = 'data.json';
+        const apiUrl = `https://api.github.com/repos/${owner}/${repo}/contents/${filePath}`;
+
+        const getRes = await fetch(apiUrl, {
+          headers: { Authorization: `token ${token}` }
+        });
+
+        const fileData = await getRes.json();
+        const sha = fileData.sha;
+
+        const updatedContent = btoa(unescape(encodeURIComponent(matchData)));
+
+        const res = await fetch(apiUrl, {
+          method: 'PUT',
+          headers: {
+            Authorization: `token ${token}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            message: `${commitMessage} by ${adminName}`,
+            content: updatedContent,
+            sha
+          })
+        });
+
+        if (res.ok) {
+          statusBox.textContent = '✅ Update successful! Site will refresh automatically in less than a minute.';
+          statusBox.className = 'status success';
+        } else {
+          throw new Error('Update failed.');
+        }
+      } catch (err) {
+        statusBox.textContent = '❌ Error: ' + err.message;
+        statusBox.className = 'status error';
+      }
+    });
+  </script>
+</body>
+</html>let dataJson = { matches: [], teams: [], comments: [] };
 
 async function fetchData() {
   const res = await fetch(`https://raw.githubusercontent.com/${GITHUB_USERNAME}/${REPO_NAME}/${BRANCH}/${FILE_PATH}`);
