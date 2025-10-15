@@ -1,0 +1,320 @@
+<!-- admin.html -->
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>PFL Admin — Live Control</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;600;800&display=swap">
+<style>
+  :root{ --bg:#050405; --card:#0b0b0b; --gold:#d4af37; --muted:#bfc6cc; --white:#fff; }
+  body{ margin:0; font-family:Inter,system-ui,Arial; background: linear-gradient(180deg,#020202,#0a0a0a); color:var(--white); }
+  .wrap{ max-width:980px; margin:12px auto; padding:12px; display:grid; gap:12px; }
+  header{ display:flex; align-items:center; gap:12px; padding:12px 0; }
+  .card{ background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01)); padding:12px; border-radius:10px; border:1px solid rgba(255,255,255,0.03); }
+  input, textarea, select{ width:100%; padding:8px; border-radius:8px; border:1px solid rgba(255,255,255,0.04); background:transparent; color:var(--white); }
+  button{ padding:8px 10px; border-radius:8px; border:0; font-weight:700; cursor:pointer; }
+  .row{ display:flex; gap:8px; flex-wrap:wrap; }
+  .primary{ background:linear-gradient(90deg,var(--gold),#ffdf85); color:#111; }
+  .muted{ color:var(--muted); font-size:13px; }
+  .match-list{ display:flex; flex-direction:column; gap:8px; max-height:320px; overflow:auto; }
+  .match-item{ display:flex; justify-content:space-between; gap:8px; padding:8px; border-radius:8px; background:rgba(255,255,255,0.02); }
+  .small{ padding:6px 8px; border-radius:6px; background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.03); }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div>
+      <div style="font-weight:800; font-size:18px;">Pinnacle Football League — Admin</div>
+      <div class="muted">Control live matches (password protected)</div>
+    </div>
+    <div style="margin-left:auto;"><a href="index.html" style="color:var(--gold); font-weight:700; text-decoration:none;">View public site</a></div>
+  </header>
+
+  <div class="card">
+    <div style="margin-bottom:8px;" class="muted">Enter admin password to unlock controls</div>
+    <div class="row" style="align-items:center;">
+      <input id="passInput" type="password" placeholder="Admin password" />
+      <button id="unlockBtn" class="primary">Unlock</button>
+    </div>
+    <div id="adminControls" style="display:none; margin-top:12px;">
+      <div class="muted">Create a new match</div>
+      <div style="display:grid; gap:8px; margin-top:8px;">
+        <div class="row">
+          <input id="homeName" placeholder="Home team name" />
+          <input id="awayName" placeholder="Away team name" />
+        </div>
+        <div class="row">
+          <input id="homeCoach" placeholder="Home coach" />
+          <input id="awayCoach" placeholder="Away coach" />
+        </div>
+        <div class="row">
+          <input id="homePlayers" placeholder="Home players (comma separated)" />
+          <input id="awayPlayers" placeholder="Away players (comma separated)" />
+        </div>
+
+        <div class="row">
+          <div style="flex:1">
+            <label class="muted">Home logo</label>
+            <input id="homeLogoFile" type="file" accept="image/*" />
+          </div>
+          <div style="flex:1">
+            <label class="muted">Away logo</label>
+            <input id="awayLogoFile" type="file" accept="image/*" />
+          </div>
+        </div>
+
+        <div style="display:flex; gap:8px; margin-top:6px;">
+          <button id="createMatchBtn" class="primary">Create Match</button>
+          <button id="refreshMatches" class="small">Refresh</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="muted">Matches</div>
+    <div class="match-list" id="matchList"></div>
+  </div>
+
+  <div class="card" id="matchEditorCard" style="display:none;">
+    <div style="display:flex; justify-content:space-between; align-items:center;">
+      <div id="editingTitle" style="font-weight:800;">Editing match</div>
+      <div style="display:flex; gap:8px;">
+        <button id="setLiveBtn" class="primary small">Set Live</button>
+        <button id="endMatchBtn" class="small">End Match</button>
+      </div>
+    </div>
+
+    <div style="margin-top:10px;">
+      <div class="row">
+        <div style="flex:1">
+          <div class="muted">Home</div>
+          <div><input id="editHomeName" /></div>
+          <div class="muted">Score</div>
+          <div><input id="editHomeScore" type="number" min="0" /></div>
+        </div>
+        <div style="flex:1">
+          <div class="muted">Away</div>
+          <div><input id="editAwayName" /></div>
+          <div class="muted">Score</div>
+          <div><input id="editAwayScore" type="number" min="0" /></div>
+        </div>
+      </div>
+
+      <div style="margin-top:8px;">
+        <div class="muted">Add event (minute + description)</div>
+        <div class="row" style="margin-top:6px;">
+          <input id="evtMinute" placeholder="e.g. 23 or 45+2" />
+          <input id="evtDesc" placeholder="Player X - Goal" style="flex:1" />
+          <select id="evtTeam">
+            <option value="">Match</option>
+            <option value="A">Home</option>
+            <option value="B">Away</option>
+          </select>
+          <button id="addEventBtn" class="primary">Add</button>
+        </div>
+
+        <div style="margin-top:10px;">
+          <div class="muted">Events (most recent first)</div>
+          <div id="evtList" style="max-height:180px; overflow:auto; margin-top:6px;"></div>
+        </div>
+
+        <div style="display:flex; gap:8px; margin-top:10px;">
+          <button id="saveMatchBtn" class="primary">Save changes</button>
+          <button id="deleteMatchBtn" class="small">Delete match</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script type="module">
+  import { listenMatches, pushMatch, updateMatch, uploadLogoFile, getMatchOnce } from './firebase.js';
+
+  // Admin password (client-side): Rowland12#
+  const ADMIN_PASS = 'Rowland12#';
+
+  const passInput = document.getElementById('passInput');
+  const unlockBtn = document.getElementById('unlockBtn');
+  const adminControls = document.getElementById('adminControls');
+  const matchList = document.getElementById('matchList');
+  const matchEditorCard = document.getElementById('matchEditorCard');
+
+  const homeName = document.getElementById('homeName');
+  const awayName = document.getElementById('awayName');
+  const homeCoach = document.getElementById('homeCoach');
+  const awayCoach = document.getElementById('awayCoach');
+  const homePlayers = document.getElementById('homePlayers');
+  const awayPlayers = document.getElementById('awayPlayers');
+  const homeLogoFile = document.getElementById('homeLogoFile');
+  const awayLogoFile = document.getElementById('awayLogoFile');
+  const createMatchBtn = document.getElementById('createMatchBtn');
+  const refreshMatches = document.getElementById('refreshMatches');
+
+  let matchesCache = [];
+  let editingMatchId = null;
+
+  unlockBtn.addEventListener('click', ()=>{
+    if(passInput.value === ADMIN_PASS){
+      passInput.value = '';
+      adminControls.style.display = 'block';
+      alert('Admin unlocked.');
+    } else {
+      alert('Wrong password.');
+    }
+  });
+
+  // Create match
+  createMatchBtn.addEventListener('click', async ()=>{
+    if(!homeName.value.trim() || !awayName.value.trim()){ alert('Enter both team names'); return; }
+    createMatchBtn.disabled = true;
+    createMatchBtn.textContent = 'Creating...';
+    // upload logos if provided
+    let homeLogoUrl = '';
+    let awayLogoUrl = '';
+    if(homeLogoFile.files && homeLogoFile.files[0]){
+      homeLogoUrl = await uploadLogoFile(homeLogoFile.files[0], 'team_home');
+    }
+    if(awayLogoFile.files && awayLogoFile.files[0]){
+      awayLogoUrl = await uploadLogoFile(awayLogoFile.files[0], 'team_away');
+    }
+    const matchObj = {
+      home: { name: homeName.value.trim(), coach: homeCoach.value.trim()||'', players: homePlayers.value.split(',').map(s=>s.trim()).filter(Boolean), logoUrl: homeLogoUrl, score: 0 },
+      away: { name: awayName.value.trim(), coach: awayCoach.value.trim()||'', players: awayPlayers.value.split(',').map(s=>s.trim()).filter(Boolean), logoUrl: awayLogoUrl, score: 0 },
+      status: 'not_started',
+      events: []
+    };
+    try{
+      const key = await pushMatch(matchObj);
+      alert('Match created.');
+      homeName.value=''; awayName.value=''; homeCoach.value=''; awayCoach.value=''; homePlayers.value=''; awayPlayers.value=''; homeLogoFile.value=''; awayLogoFile.value='';
+    }catch(e){
+      console.error(e); alert('Failed creating match: '+e.message);
+    } finally {
+      createMatchBtn.disabled = false;
+      createMatchBtn.textContent = 'Create Match';
+    }
+  });
+
+  // Listen matches in real-time and render list
+  listenMatches((matches)=>{
+    matchesCache = matches || [];
+    renderMatchList();
+    // If currently editing a match, refresh its editor data
+    if(editingMatchId){ refreshEditor(editingMatchId); }
+  });
+
+  function renderMatchList(){
+    matchList.innerHTML = '';
+    if(!matchesCache.length){ matchList.innerHTML = '<div class="muted">No matches yet</div>'; return; }
+    // newest first
+    matchesCache.sort((a,b)=> (b.createdAt||'').localeCompare(a.createdAt||''));
+    matchesCache.forEach(m=>{
+      const div = document.createElement('div'); div.className='match-item';
+      div.innerHTML = `<div>
+          <div style="font-weight:700">${m.home?.name||'Home'} vs ${m.away?.name||'Away'}</div>
+          <div class="muted">${m.status || 'not_started'} • ${new Date(m.createdAt||'').toLocaleString()}</div>
+        </div>
+        <div style="display:flex; gap:8px; align-items:center;">
+          <button class="small" data-id="${m.id}" data-act="edit">Edit</button>
+          <button class="small" data-id="${m.id}" data-act="setLive">Live</button>
+          <button class="small" data-id="${m.id}" data-act="end">End</button>
+        </div>`;
+      matchList.appendChild(div);
+    });
+    // attach clicks
+    matchList.querySelectorAll('button').forEach(btn=>{
+      btn.addEventListener('click', (e)=>{
+        const id = btn.getAttribute('data-id');
+        const act = btn.getAttribute('data-act');
+        if(act==='edit') openEditor(id);
+        else if(act==='setLive') setMatchLive(id);
+        else if(act==='end') endMatch(id);
+      });
+    });
+  }
+
+  async function openEditor(id){
+    editingMatchId = id;
+    matchEditorCard.style.display = 'block';
+    document.getElementById('editingTitle').textContent = 'Editing match';
+    refreshEditor(id);
+  }
+
+  async function refreshEditor(id){
+    const m = matchesCache.find(x=>x.id===id);
+    if(!m) return;
+    document.getElementById('editHomeName').value = m.home?.name || '';
+    document.getElementById('editAwayName').value = m.away?.name || '';
+    document.getElementById('editHomeScore').value = m.home?.score || 0;
+    document.getElementById('editAwayScore').value = m.away?.score || 0;
+    // render events
+    const el = document.getElementById('evtList');
+    el.innerHTML = '';
+    (m.events||[]).forEach(ev=>{
+      const d = document.createElement('div'); d.style.padding='6px'; d.style.borderBottom='1px solid rgba(255,255,255,0.03)';
+      d.innerHTML = `<div style="font-weight:700">${ev.minute} — ${ev.type}</div><div class="muted">${ev.desc}</div>`;
+      el.appendChild(d);
+    });
+    // save button
+    document.getElementById('saveMatchBtn').onclick = async ()=>{
+      const patch = {
+        home: { ...m.home, name: document.getElementById('editHomeName').value.trim(), score: Number(document.getElementById('editHomeScore').value||0) },
+        away: { ...m.away, name: document.getElementById('editAwayName').value.trim(), score: Number(document.getElementById('editAwayScore').value||0) }
+      };
+      await updateMatch(id, patch);
+      alert('Saved.');
+    };
+    document.getElementById('deleteMatchBtn').onclick = async ()=>{
+      if(!confirm('Delete match permanently?')) return;
+      // remove by setting null
+      await updateMatch(id, { deleted: true, status: 'deleted' });
+      alert('Marked deleted (it will be hidden).');
+    };
+    document.getElementById('addEventBtn').onclick = async ()=>{
+      const minute = document.getElementById('evtMinute').value.trim() || '';
+      const desc = document.getElementById('evtDesc').value.trim();
+      const team = document.getElementById('evtTeam').value || '';
+      if(!desc){ alert('Add description'); return; }
+      const ev = { type: desc.split('-')[0] || 'Event', minute: minute || new Date().getMinutes().toString(), desc, team, timestamp: new Date().toISOString() };
+      const newEvents = [ev].concat(m.events || []);
+      await updateMatch(id, { events: newEvents });
+      document.getElementById('evtMinute').value=''; document.getElementById('evtDesc').value='';
+      alert('Event added.');
+    };
+    document.getElementById('setLiveBtn').onclick = async ()=>{
+      // set all matches to not live, then set this one live
+      // naive approach: iterate cached matches
+      for(const mm of matchesCache){
+        await updateMatch(mm.id, { status: mm.id === id ? 'live' : (mm.status === 'deleted' ? 'deleted' : 'finished') });
+      }
+      alert('Match set to LIVE.');
+    };
+    document.getElementById('endMatchBtn').onclick = async ()=>{
+      await updateMatch(id, { status: 'finished' });
+      alert('Match ended.');
+    };
+  }
+
+  async function setMatchLive(id){
+    // same as setLiveBtn but simple
+    for(const mm of matchesCache){
+      await updateMatch(mm.id, { status: mm.id === id ? 'live' : (mm.status === 'deleted' ? 'deleted' : 'finished') });
+    }
+    alert('Match set to LIVE.');
+  }
+  async function endMatch(id){
+    await updateMatch(id, { status: 'finished' });
+    alert('Match ended.');
+  }
+
+  refreshMatches.addEventListener('click', ()=> renderMatchList());
+
+  // convenience: upload logo and replace in match (not in create) - handled in editor if needed via prompt+file
+  // (uploadLogoFile is used during create above)
+</script>
+</body>
+  </html>
