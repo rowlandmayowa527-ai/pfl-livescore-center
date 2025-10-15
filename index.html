@@ -1,40 +1,90 @@
-<!-- index.html -->
-<!doctype html>
-<html lang="en">
+<!DOCTYPE html>
+<html>
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>PFL LiveScore Center</title>
-<meta name="description" content="Pinnacle Football League - Live scores and results. Powered by Arcane Override Games." />
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;600;800&display=swap">
-<style>
-  :root{ --bg:#080706; --card:#0c0c0c; --gold:#d4af37; --muted:#bfc6cc; --white:#fff; --accent:#d4af37; }
-  body{ margin:0; font-family:Inter,system-ui,Arial; background:linear-gradient(180deg,#050505 0%,#0a0a0a 100%); color:var(--white); }
-  header{ display:flex; gap:12px; align-items:center; padding:12px 16px; border-bottom:1px solid rgba(255,255,255,0.04); }
-  header img.logo{ width:56px; height:56px; object-fit:cover; border-radius:8px; }
-  header .title{ font-weight:800; font-size:18px; }
-  header .subtitle{ color:var(--muted); font-size:13px; }
-  .wrap{ max-width:1100px; margin:12px auto; padding:12px; display:grid; gap:12px; grid-template-columns: 1fr; }
-  .controls{ display:flex; justify-content:space-between; align-items:center; gap:8px; margin-bottom:6px; }
-  .card{ background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01)); padding:12px; border-radius:12px; border:1px solid rgba(255,255,255,0.03); }
-  .fixture-list{ display:flex; flex-direction:column; gap:10px; }
-  .match{ display:flex; gap:12px; align-items:center; justify-content:space-between; padding:10px; border-radius:10px; }
-  .match.live{ box-shadow: 0 8px 30px rgba(212,175,55,0.12); border:1px solid rgba(212,175,55,0.15); }
-  .team{ display:flex; gap:12px; align-items:center; min-width:240px; }
-  .tlogo{ width:56px; height:56px; border-radius:8px; object-fit:cover; background:#0b0b0b; border:1px solid rgba(255,255,255,0.03); }
-  .tname{ font-weight:700; color:var(--white); font-size:16px; }
-  .coach{ color:var(--muted); font-size:12px; }
-  .score{ font-weight:900; font-size:28px; min-width:110px; text-align:center; }
-  .meta{ color:var(--muted); font-size:13px; }
-  .events{ color:var(--muted); font-size:13px; }
-  footer{ text-align:center; padding:10px; color:var(--muted); font-size:13px; }
-  @media(max-width:720px){ .team .tname{ font-size:14px } .score{ font-size:22px } }
-</style>
+  <title>PFL Live Score</title>
+  <style>
+    body { font-family: sans-serif; background: #000; color: #fff; text-align:center; }
+    .team { display:inline-block; width:45%; font-size: 1.5em; }
+    .score { font-size: 3em; margin: 0 20px; color: gold; transition: color 0.5s; }
+    .goal { color: red !important; }
+    .subs { font-size: 1em; margin-top: 10px; color: #ccc; }
+    hr { border-color: #444; margin: 20px 0; }
+  </style>
 </head>
 <body>
-<header>
-  <img id="pflRepoLogo" class="logo" src="pfl-logo.png" alt="PFL logo">
-  <div>
+  <h1>🏆 Pinnacle Football League</h1>
+
+  <div id="liveMatch">
+    <div class="team" id="homeTeam"></div>
+    <span class="score" id="homeScore">0</span>
+    <span class="score">:</span>
+    <span class="score" id="awayScore">0</span>
+    <div class="team" id="awayTeam"></div>
+    <div class="subs" id="subs"></div>
+  </div>
+
+  <h2>Previous Matches</h2>
+  <div id="archive"></div>
+
+  <audio id="goalSound" src="https://actions.google.com/sounds/v1/alarms/beep_short.ogg"></audio>
+
+  <script>
+    let lastHomeScore = 0;
+    let lastAwayScore = 0;
+
+    function loadMatch() {
+      const matchData = JSON.parse(localStorage.getItem('currentMatch'));
+      if(matchData) {
+        document.getElementById('homeTeam').innerText = matchData.homeTeam;
+        document.getElementById('awayTeam').innerText = matchData.awayTeam;
+        document.getElementById('subs').innerHTML = matchData.subs.join('<br>');
+
+        const homeScoreEl = document.getElementById('homeScore');
+        const awayScoreEl = document.getElementById('awayScore');
+
+        if(matchData.homeScore > lastHomeScore) flashGoal(homeScoreEl);
+        if(matchData.awayScore > lastAwayScore) flashGoal(awayScoreEl);
+
+        homeScoreEl.innerText = matchData.homeScore;
+        awayScoreEl.innerText = matchData.awayScore;
+
+        lastHomeScore = matchData.homeScore;
+        lastAwayScore = matchData.awayScore;
+      }
+
+      loadArchive();
+    }
+
+    function flashGoal(element) {
+      const sound = document.getElementById('goalSound');
+      sound.play();
+      element.classList.add('goal');
+      setTimeout(() => element.classList.remove('goal'), 1000);
+    }
+
+    function loadArchive() {
+      const archive = JSON.parse(localStorage.getItem('matchArchive')) || [];
+      const archiveDiv = document.getElementById('archive');
+      archiveDiv.innerHTML = '';
+
+      archive.sort((a,b) => new Date(b.timestamp) - new Date(a.timestamp));
+
+      archive.forEach(match => {
+        archiveDiv.innerHTML += `
+          <div>
+            <strong>${match.homeTeam} ${match.homeScore} : ${match.awayScore} ${match.awayTeam}</strong><br>
+            <small>${match.subs.join(', ')}</small>
+            <hr>
+          </div>
+        `;
+      });
+    }
+
+    loadMatch();
+    setInterval(loadMatch, 3000);
+  </script>
+</body>
+</html>  <div>
     <div class="title">Pinnacle Football League — LiveScore</div>
     <div class="subtitle">Powered by Arcane Override Games (AOG)</div>
   </div>
