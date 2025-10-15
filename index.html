@@ -3,38 +3,178 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Pinnacle Football League | LiveScore Center</title>
-<meta name="description" content="Pinnacle Football League live scores, tables, fixtures and stats.">
+<title>Pinnacle Football League | LiveCenter</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;600;800&display=swap" rel="stylesheet">
 <style>
-  :root{ --bg:#050505; --card:#0c0c0c; --gold:#d4af37; --muted:#c3c6c8; --white:#ffffff; --danger:#ff4d4f; }
+  :root{ --bg:#050505; --card:#0c0c0c; --gold:#d4af37; --muted:#c3c6c8; --white:#fff; --danger:#ff4d4f;}
   body{ margin:0; font-family:Inter,system-ui,Arial; background:var(--bg); color:var(--white); }
-  header{ display:flex; align-items:center; gap:12px; padding:14px; border-bottom:1px solid rgba(255,255,255,0.03); }
-  header h1{ margin:0; color:var(--gold); font-size:20px; }
-  main{ max-width:1100px; margin:14px auto; padding:12px; display:grid; gap:12px; grid-template-columns: 1fr 360px; }
-  .card{ background:linear-gradient(180deg, rgba(255,255,255,0.01), rgba(255,255,255,0.02)); padding:12px; border-radius:12px; border:1px solid rgba(255,255,255,0.03); }
-  /* Live match */
-  .liveBox{ display:flex; align-items:center; justify-content:space-between; gap:12px; }
-  .teamCol{ width:40%; text-align:left; }
-  .teamName{ font-weight:800; font-size:18px; }
-  .score{ font-weight:900; font-size:44px; color:var(--gold); min-width:80px; text-align:center; }
-  .meta{ color:var(--muted); font-size:13px; }
-  .goalFlash{ color:var(--danger) !important; transition: color .4s; }
-  /* right column */
-  aside{ display:flex; flex-direction:column; gap:12px; }
+  header{ padding:14px; background:linear-gradient(90deg,var(--gold),#ffd87a); color:#000; display:flex; justify-content:space-between; align-items:center; }
+  header h1{ margin:0; font-size:18px; }
+  main{ max-width:1100px; margin:12px auto; padding:12px; display:grid; gap:12px; grid-template-columns: 1fr 360px; }
+  .card{ background:var(--card); padding:12px; border-radius:10px; border:1px solid rgba(255,255,255,0.03); }
+  .liveRow{ display:flex; justify-content:space-between; align-items:center; }
+  .team{ font-weight:800; font-size:18px; }
+  .score{ font-size:40px; color:var(--gold); font-weight:900; min-width:80px; text-align:center; }
+  .goalFlash{ color:var(--danger) !important; transition:color .5s; }
+  table{ width:100%; border-collapse:collapse; margin-top:8px; color:var(--white); }
+  th,td{ padding:8px; border-bottom:1px solid rgba(255,255,255,0.03); text-align:left; }
+  th{ color:var(--gold); }
   .small{ color:var(--muted); font-size:13px; }
-  table{ width:100%; border-collapse:collapse; margin-top:8px; }
-  th, td{ padding:8px; border-bottom:1px solid rgba(255,255,255,0.03); text-align:left; font-size:14px; }
-  th{ color:var(--gold); font-weight:800; }
-  pre{ background:#0a0a0a; padding:10px; overflow:auto; color:var(--muted); }
-  button{ padding:8px 10px; border-radius:8px; border:0; cursor:pointer; font-weight:700; }
-  .btnGold{ background:linear-gradient(90deg,var(--gold),#ffd87a); color:#111; }
-  .commentBox textarea{ width:100%; padding:8px; border-radius:8px; background:#0b0b0b; color:var(--white); border:1px solid rgba(255,255,255,0.03); }
-  .predictionRow{ display:flex; gap:8px; align-items:center; margin-top:8px; }
   footer{ text-align:center; color:var(--muted); padding:12px 0; }
-  @media(max-width:980px){
-    main{ grid-template-columns: 1fr; padding:8px; }
-    .score{ font-size:36px; }
+  @media(max-width:980px){ main{ grid-template-columns: 1fr; } .score{ font-size:32px; } }
+</style>
+</head>
+<body>
+<header>
+  <h1>Pinnacle Football League Live Center | Powered by Arcane Override Games</h1>
+  <div class="small" id="lastUpdated">Updated: —</div>
+</header>
+
+<main>
+  <section class="card" id="liveCard">
+    <div id="liveArea" class="small">Loading live info…</div>
+  </section>
+
+  <aside>
+    <div class="card" id="fixturesCard">
+      <h3 style="margin:0;color:var(--gold)">Upcoming Fixtures</h3>
+      <div id="fixturesList" class="small">Loading…</div>
+    </div>
+
+    <div class="card" id="tableCard">
+      <h3 style="margin:0;color:var(--gold)">League Table</h3>
+      <div id="tableWrap" class="small">Loading…</div>
+    </div>
+
+    <div class="card" id="chartCard">
+      <h3 style="margin:0;color:var(--gold)">Stats (history)</h3>
+      <pre id="chartsPre">Loading…</pre>
+    </div>
+  </aside>
+
+  <section class="card" style="grid-column:1/3">
+    <h3 style="margin:0;color:var(--gold)">Past Results</h3>
+    <div id="archiveList" class="small">Loading…</div>
+  </section>
+</main>
+
+<footer>© Pinnacle Football League — Arcane Override Games</footer>
+<audio id="goalSound" src="https://actions.google.com/sounds/v1/alarms/beep_short.ogg"></audio>
+
+<script>
+const RAW_URL = 'https://raw.githubusercontent.com/rowlandmayowa527-ai/pfl-livescore-center/main/data.json';
+const POLL = 30000;
+let cached = null;
+let last = {home:-1,away:-1};
+
+async function fetchData(){
+  try{
+    const r = await fetch(RAW_URL + '?cachebust=' + Date.now());
+    if(!r.ok) throw new Error('fetch fail');
+    cached = await r.json();
+    renderAll();
+    document.getElementById('lastUpdated').innerText = 'Updated: ' + new Date().toLocaleTimeString();
+  }catch(e){
+    console.error(e);
+    document.getElementById('liveArea').innerText = 'Unable to fetch live data.';
+  }
+}
+
+function renderAll(){
+  renderLive();
+  renderFixtures();
+  renderTable();
+  renderCharts();
+  renderArchive();
+}
+
+function renderLive(){
+  const livePointer = cached.live;
+  const liveArea = document.getElementById('liveArea');
+  if(!livePointer){
+    // show next upcoming
+    const next = (cached.fixtures||[]).filter(f=>f.status==='upcoming').sort((a,b)=> new Date(a.date+' '+a.time) - new Date(b.date+' '+b.time))[0];
+    if(!next){ liveArea.innerHTML = '<div class="small">No matches scheduled.</div>'; last={home:-1,away:-1}; return; }
+    liveArea.innerHTML = `<div class="small">Next: <strong>${next.date} ${next.time}</strong> • ${next.home} vs ${next.away} <div class="small">Venue: ${next.venue}</div></div>`;
+    last={home:-1,away:-1};
+    return;
+  }
+  const f = (cached.fixtures||[]).find(x=>x.id===livePointer.id) || livePointer;
+  const hs = Number(f.homeScore||0);
+  const as = Number(f.awayScore||0);
+  const homeGoal = (last.home!==-1) && hs>last.home;
+  const awayGoal = (last.away!==-1) && as>last.away;
+  const html = `
+    <div class="liveRow">
+      <div style="width:35%"><div class="team">${f.home}</div><div class="small">Venue: ${f.venue||'—'}</div></div>
+      <div style="text-align:center">
+        <div class="score ${homeGoal?'goalFlash':''}">${hs}</div>
+        <div style="font-size:18px">:</div>
+        <div class="score ${awayGoal?'goalFlash':''}">${as}</div>
+      </div>
+      <div style="width:35%; text-align:right"><div class="team">${f.away}</div><div class="small">${f.date} ${f.time}</div></div>
+    </div>
+    <div style="margin-top:8px" class="small">Status: ${f.status||'live'} • Last update: ${new Date(f.timestamp||cached.meta.updatedAt).toLocaleString()}</div>
+  `;
+  liveArea.innerHTML = html;
+  if(homeGoal || awayGoal){ document.getElementById('goalSound').play().catch(()=>{}); }
+  last.home = hs; last.away = as;
+}
+
+function renderFixtures(){
+  const list = (cached.fixtures||[]).slice().sort((a,b)=> new Date(a.date+' '+(a.time||'')) - new Date(b.date+' '+(b.time||'')));
+  const el = document.getElementById('fixturesList');
+  if(!list.length){ el.innerHTML = '<div class="small">No fixtures</div>'; return; }
+  el.innerHTML = list.map(f=>`<div style="margin-bottom:6px;"><strong style="color:var(--gold)">${f.date} ${f.time}</strong> — ${f.home} vs ${f.away}<div class="small">Venue: ${f.venue} • Status: ${f.status}</div></div>`).join('');
+}
+
+function renderTable(){
+  const archive = cached.archive || [];
+  const table = {};
+  archive.forEach(m=>{
+    [m.home,m.away].forEach(t=>{ if(!table[t]) table[t]={P:0,W:0,D:0,L:0,GF:0,GA:0,GD:0,Pts:0}; });
+    table[m.home].P++; table[m.away].P++;
+    table[m.home].GF += Number(m.homeScore||0); table[m.home].GA += Number(m.awayScore||0);
+    table[m.away].GF += Number(m.awayScore||0); table[m.away].GA += Number(m.homeScore||0);
+    if(m.homeScore>m.awayScore){ table[m.home].W++; table[m.away].L++; table[m.home].Pts+=3; }
+    else if(m.homeScore<m.awayScore){ table[m.away].W++; table[m.home].L++; table[m.away].Pts+=3; }
+    else { table[m.home].D++; table[m.away].D++; table[m.home].Pts++; table[m.away].Pts++; }
+    table[m.home].GD = table[m.home].GF - table[m.home].GA;
+    table[m.away].GD = table[m.away].GF - table[m.away].GA;
+  });
+  const wrap = document.getElementById('tableWrap');
+  if(Object.keys(table).length===0){ wrap.innerHTML = '<div class="small">Table will appear after matches end</div>'; return; }
+  let html = '<table><thead><tr><th>Team</th><th>P</th><th>W</th><th>D</th><th>L</th><th>GF</th><th>GA</th><th>GD</th><th>Pts</th></tr></thead><tbody>';
+  Object.entries(table).sort((a,b)=> b[1].Pts - a[1].Pts).forEach(([team,st])=> html+=`<tr><td>${team}</td><td>${st.P}</td><td>${st.W}</td><td>${st.D}</td><td>${st.L}</td><td>${st.GF}</td><td>${st.GA}</td><td>${st.GD}</td><td>${st.Pts}</td></tr>`);
+  html += '</tbody></table>';
+  wrap.innerHTML = html;
+}
+
+function renderCharts(){
+  const archive = cached.archive || [];
+  const teams = {};
+  archive.forEach(m=>{ [m.home,m.away].forEach(t=>{ if(!teams[t]) teams[t]={G:0}; });
+    teams[m.home].G += Number(m.homeScore||0); teams[m.away].G += Number(m.awayScore||0);
+  });
+  const bars = n=>'█'.repeat(Math.min(n,30));
+  let out='Goals:\\n';
+  Object.entries(teams).forEach(([t,v])=> out += `${t} ${bars(v.G)} ${v.G}\\n`);
+  document.getElementById('chartsPre').innerText = out || 'No stats yet';
+}
+
+function renderArchive(){
+  const a = cached.archive || [];
+  const el = document.getElementById('archiveList');
+  if(!a.length){ el.innerHTML='<div class="small">No previous matches</div>'; return; }
+  el.innerHTML = a.slice().reverse().map(m=>`<div style="margin-bottom:6px;"><strong>${m.date}</strong> • ${m.home} ${m.homeScore} - ${m.awayScore} ${m.away} <div class="small">Venue: ${m.venue||'—'}</div></div>`).join('');
+}
+
+/* start polling */
+fetchData();
+setInterval(fetchData, POLL);
+</script>
+</body>
+</html>    .score{ font-size:36px; }
   }
 </style>
 </head>
