@@ -1,17 +1,461 @@
-<!DOCTYPE html>
-<html>
-  <head>
-    <title>Pinnacle Football League - Live Scores | Arcane Override Games</title>
-  </head>
-  <body style="font-family: Arial; text-align: center;">
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>PFL LiveScore Center — Horizontal</title>
+<style>
+  :root{
+    --bg:#071126;
+    --card:#0b1724;
+    --accent:#e11d48;
+    --muted:#9aa4b2;
+    --white:#eef2f7;
+    --ok:#22c55e;
+    --warn:#f59e0b;
+  }
+  *{box-sizing:border-box}
+  body{ margin:0; font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial; background:linear-gradient(180deg,#031022 0%, #071726 100%); color:var(--white); -webkit-font-smoothing:antialiased;}
+  header{ display:flex; align-items:center; gap:12px; padding:12px 16px; border-bottom:1px solid rgba(255,255,255,0.03);}
+  header img.logo{ width:48px; height:48px; object-fit:cover; border-radius:8px; border:1px solid rgba(255,255,255,0.04);}
+  header h1{ font-size:18px; margin:0; }
+  header .sub{ color:var(--muted); font-size:13px; margin-top:4px;}
+  .wrap{ max-width:1100px; margin:12px auto; padding:12px; display:grid; gap:12px; grid-template-columns: 2fr 1fr; }
+  .card{ background:var(--card); padding:12px; border-radius:12px; box-shadow: 0 6px 18px rgba(6,8,15,0.6); border:1px solid rgba(255,255,255,0.03);}
+  /* Horizontal scoreboard */
+  .scoreboard{ display:flex; gap:16px; align-items:center; justify-content:space-between; flex-wrap:wrap;}
+  .team-block{ display:flex; flex-direction:column; align-items:center; gap:8px; min-width:220px; }
+  .team-top{ display:flex; gap:10px; align-items:center; }
+  .tlogo{ width:84px; height:84px; border-radius:10px; object-fit:cover; border:1px solid rgba(255,255,255,0.04); background:rgba(255,255,255,0.02); }
+  .tname{ font-size:18px; font-weight:700; transition: color .25s ease; text-align:center; min-width:120px;}
+  .coach{ font-size:13px; color:var(--muted); margin-top:2px;}
+  .scorebox{ display:flex; flex-direction:column; align-items:center; gap:6px; min-width:140px; }
+  .scorebig{ font-size:54px; font-weight:900;}
+  .vs{ font-size:13px; color:var(--muted);}
+  .meta{ display:flex; gap:12px; align-items:center; color:var(--muted); font-size:13px;}
+  .events{ margin-top:12px;}
+  .feed{ max-height:420px; overflow:auto; padding:8px; border-radius:8px; background:linear-gradient(180deg, rgba(255,255,255,0.01), rgba(255,255,255,0.02)); }
+  .ev{ padding:8px; border-bottom:1px dashed rgba(255,255,255,0.02); font-size:14px; }
+  .muted{ color:var(--muted); }
+  .admin-panel{ display:none; gap:8px; margin-top:8px; }
+  .admin-panel.show{ display:block; }
+  label{ display:block; font-size:13px; margin-bottom:6px; color:var(--muted);}
+  input[type="text"], input[type="password"], textarea{ width:100%; padding:8px; border-radius:8px; border:1px solid rgba(255,255,255,0.04); background:transparent; color:var(--white); outline:none; }
+  button{ background:transparent; color:var(--white); border:1px solid rgba(255,255,255,0.04); padding:8px 12px; border-radius:8px; font-weight:700; cursor:pointer; }
+  button.primary{ background:linear-gradient(90deg,var(--accent),#ff6b6b); border:0; color:white; }
+  .row{ display:flex; gap:8px; flex-wrap:wrap; }
+  .small{ font-size:13px; padding:6px 8px; border-radius:6px;}
+  .flash-red{ animation: flashRed 1s ease; }
+  @keyframes flashRed{
+    0%{ color:var(--white); text-shadow: none; transform:scale(1); }
+    30%{ color:var(--accent); text-shadow:0 0 22px rgba(225,29,72,0.35); transform:scale(1.04); }
+    100%{ color:var(--white); text-shadow: none; transform:scale(1); }
+  }
+  .logo-placeholder{ width:84px; height:84px; background:rgba(255,255,255,0.02); display:flex; align-items:center; justify-content:center; color:var(--muted); border-radius:10px; }
+  footer{ text-align:center; color:var(--muted); font-size:13px; margin-top:10px;}
+  @media(max-width:900px){
+    .wrap{ grid-template-columns: 1fr; }
+    .team-top{ flex-direction:column; align-items:center;}
+    .team-block{ min-width:100%; }
+    .scorebig{ font-size:44px; }
+  }
+</style>
+</head>
+<body>
+<header>
+  <img id="siteLogo" class="logo" src="" alt="PFL logo" />
+  <div>
     <h1>Pinnacle Football League (PFL)</h1>
-    <h3>Powered by Arcane Override Games (AOG)</h3>
-    <hr style="width:60%;">
-    <h2>🏆 Live Score Updates</h2>
-    <p>Welcome to the official live score center of the Pinnacle Football League.</p>
-    <p>Matchday updates, results, and standings will appear here soon...</p>
-    <footer style="margin-top: 40px; font-size: 13px; color: gray;">
-      © 2025 Arcane Override Games | All Rights Reserved
+    <div class="sub">Powered by Arcane Override Games (AOG) — Live Score Center</div>
+  </div>
+</header>
+
+<div class="wrap">
+  <!-- Left: scoreboard & events -->
+  <div class="card">
+    <div class="scoreboard">
+      <div class="team-block" id="leftTeam">
+        <div class="team-top">
+          <img id="teamALogo" class="tlogo" src="" alt="Team A Logo">
+          <div style="display:flex; flex-direction:column; align-items:flex-start;">
+            <div id="teamAName" class="tname">Team A</div>
+            <div id="teamACoach" class="coach">Coach: —</div>
+            <div class="muted" style="font-size:13px; margin-top:6px;">Players: <span id="teamAPlayers">—</span></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="scorebox">
+        <div class="scorebig" id="score">0 — 0</div>
+        <div class="vs">LIVE</div>
+        <div class="meta"><div>Match clock: <span id="matchTime">0'</span></div><div>Status: <span id="matchStatus">Not started</span></div></div>
+        <div style="display:flex; gap:8px; margin-top:8px;">
+          <button id="resetBtn" class="small">Reset Match</button>
+          <button id="toggleAdminBtn" class="primary small">Admin</button>
+        </div>
+      </div>
+
+      <div class="team-block" id="rightTeam">
+        <div class="team-top">
+          <div style="display:flex; flex-direction:column; align-items:flex-end;">
+            <div id="teamBName" class="tname">Team B</div>
+            <div id="teamBCoach" class="coach">Coach: —</div>
+            <div class="muted" style="font-size:13px; margin-top:6px;">Players: <span id="teamBPlayers">—</span></div>
+          </div>
+          <img id="teamBLogo" class="tlogo" src="" alt="Team B Logo">
+        </div>
+      </div>
+    </div>
+
+    <div class="events">
+      <h3 style="margin:10px 0 6px 0;">Live Events</h3>
+      <div class="feed" id="eventFeed"><div class="muted">No events yet.</div></div>
+    </div>
+  </div>
+
+  <!-- Right: admin -->
+  <div class="card">
+    <div style="display:flex; justify-content:space-between; align-items:center;">
+      <div class="muted">Admin actions</div>
+      <div class="muted" style="font-size:12px;">Data stored on this device</div>
+    </div>
+
+    <div id="adminArea" class="admin-panel">
+      <label>Admin password (local). First time password is set to <strong>Rowland12#</strong> automatically if not changed.</label>
+      <div class="row" style="margin-bottom:6px;">
+        <input id="adminPass" type="password" placeholder="Enter admin password" />
+        <button id="loginBtn" class="small">Login</button>
+      </div>
+
+      <div id="setupSection" style="display:none;">
+        <label>Competition Logo (optional)</label>
+        <div style="display:flex; gap:8px; align-items:center; margin-bottom:8px;">
+          <input id="siteLogoInput" type="file" accept="image/*" />
+          <div id="siteLogoPreview" class="logo-placeholder">Preview</div>
+        </div>
+
+        <label>Team A name</label>
+        <input id="teamANameInput" type="text" placeholder="Team A name" />
+        <label>Team A Coach</label>
+        <input id="teamACoachInput" type="text" placeholder="Coach name" />
+        <label>Team A Players (one per line)</label>
+        <textarea id="teamAPlayersInput" rows="4" placeholder="Player1&#10;Player2"></textarea>
+        <label>Team A Logo</label>
+        <input id="teamALogoInput" type="file" accept="image/*" />
+
+        <hr style="border:0; border-top:1px solid rgba(255,255,255,0.03); margin:8px 0;">
+
+        <label>Team B name</label>
+        <input id="teamBNameInput" type="text" placeholder="Team B name" />
+        <label>Team B Coach</label>
+        <input id="teamBCoachInput" type="text" placeholder="Coach name" />
+        <label>Team B Players (one per line)</label>
+        <textarea id="teamBPlayersInput" rows="4" placeholder="Player1&#10;Player2"></textarea>
+        <label>Team B Logo</label>
+        <input id="teamBLogoInput" type="file" accept="image/*" />
+
+        <div style="display:flex; gap:8px; margin-top:10px;">
+          <button id="saveSetup" class="primary">Save Setup</button>
+          <button id="clearStorage" class="small">Clear All</button>
+        </div>
+
+        <hr style="border:0; border-top:1px solid rgba(255,255,255,0.03); margin:8px 0;">
+
+        <h4 style="margin:6px 0;">Quick Events</h4>
+        <div style="display:flex; flex-direction:column; gap:8px;">
+          <div class="row">
+            <button id="goalA" class="primary">⚽ Goal — Team A</button>
+            <button id="assistA" class="small">🅰️ Assist A</button>
+            <button id="yellowA" class="small">🟨 Yellow A</button>
+            <button id="redA" class="small">🟥 Red A</button>
+            <button id="subA" class="small">🔁 Sub A</button>
+          </div>
+          <div class="row">
+            <button id="goalB" class="primary">⚽ Goal — Team B</button>
+            <button id="assistB" class="small">🅰️ Assist B</button>
+            <button id="yellowB" class="small">🟨 Yellow B</button>
+            <button id="redB" class="small">🟥 Red B</button>
+            <button id="subB" class="small">🔁 Sub B</button>
+          </div>
+        </div>
+
+        <hr style="border:0; border-top:1px solid rgba(255,255,255,0.03); margin:8px 0;">
+
+        <h4 style="margin:6px 0;">Manual Event</h4>
+        <label>Event minute (e.g. 23 or 45+2)</label>
+        <input id="eventMinute" type="text" placeholder="e.g. 23" />
+        <label>Event description (e.g. Goal — Player Name)</label>
+        <input id="eventDesc" type="text" placeholder="Describe event" />
+        <div style="display:flex; gap:8px; margin-top:8px;">
+          <button id="addEventBtn" class="primary">Add Event</button>
+          <button id="addSubBtn" class="small">Add Sub</button>
+        </div>
+      </div>
+    </div>
+
+    <footer style="margin-top:10px;">
+      <div class="muted">Tip: Use Quick Events during matches for fastest updates. Admin password stored only on this device.</div>
     </footer>
-  </body>
+  </div>
+</div>
+
+<script>
+/* -------------------- State & Persistence -------------------- */
+const STORAGE_KEY = 'pfl_live_state_v2';
+const PASS_KEY = 'pfl_admin_pass_v2';
+let state = {
+  teamA: { name:'Team A', coach:'—', players:[], logo:'', score:0},
+  teamB: { name:'Team B', coach:'—', players:[], logo:'', score:0},
+  competitionLogo: '',
+  events: [],
+  matchStatus: 'Not started',
+  matchTime: "0'"
+};
+
+function saveState(){ localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }
+function loadState(){ const s = localStorage.getItem(STORAGE_KEY); if(s) state = JSON.parse(s); }
+function clearAll(){ localStorage.removeItem(STORAGE_KEY); /* keep admin pass */ state = {
+  teamA: { name:'Team A', coach:'—', players:[], logo:'', score:0},
+  teamB: { name:'Team B', coach:'—', players:[], logo:'', score:0},
+  competitionLogo: '', events: [], matchStatus:'Not started', matchTime:"0'"}; saveState(); renderAll(); }
+
+/* -------------------- Elements -------------------- */
+const teamANameEl = document.getElementById('teamAName');
+const teamBNameEl = document.getElementById('teamBName');
+const teamALogoEl = document.getElementById('teamALogo');
+const teamBLogoEl = document.getElementById('teamBLogo');
+const scoreEl = document.getElementById('score');
+const teamACoachEl = document.getElementById('teamACoach');
+const teamBCoachEl = document.getElementById('teamBCoach');
+const teamAPlayersEl = document.getElementById('teamAPlayers');
+const teamBPlayersEl = document.getElementById('teamBPlayers');
+const eventFeed = document.getElementById('eventFeed');
+const matchStatusEl = document.getElementById('matchStatus');
+const matchTimeEl = document.getElementById('matchTime');
+const siteLogoEl = document.getElementById('siteLogo');
+
+/* admin elements */
+const loginBtn = document.getElementById('loginBtn');
+const adminPassInput = document.getElementById('adminPass');
+const toggleAdminBtn = document.getElementById('toggleAdminBtn');
+const adminArea = document.getElementById('adminArea');
+const setupSection = document.getElementById('setupSection');
+const teamANameInput = document.getElementById('teamANameInput');
+const teamBNameInput = document.getElementById('teamBNameInput');
+const teamACoachInput = document.getElementById('teamACoachInput');
+const teamBCoachInput = document.getElementById('teamBCoachInput');
+const teamAPlayersInput = document.getElementById('teamAPlayersInput');
+const teamBPlayersInput = document.getElementById('teamBPlayersInput');
+const teamALogoInput = document.getElementById('teamALogoInput');
+const teamBLogoInput = document.getElementById('teamBLogoInput');
+const siteLogoInput = document.getElementById('siteLogoInput');
+const siteLogoPreview = document.getElementById('siteLogoPreview');
+const saveSetup = document.getElementById('saveSetup');
+const clearStorageBtn = document.getElementById('clearStorage');
+const resetBtn = document.getElementById('resetBtn');
+
+/* quick events */
+const goalA = document.getElementById('goalA');
+const goalB = document.getElementById('goalB');
+const redA = document.getElementById('redA');
+const redB = document.getElementById('redB');
+const yellowA = document.getElementById('yellowA');
+const yellowB = document.getElementById('yellowB');
+const assistA = document.getElementById('assistA');
+const assistB = document.getElementById('assistB');
+const subA = document.getElementById('subA');
+const subB = document.getElementById('subB');
+
+const addEventBtn = document.getElementById('addEventBtn');
+const addSubBtn = document.getElementById('addSubBtn');
+const eventMinute = document.getElementById('eventMinute');
+const eventDesc = document.getElementById('eventDesc');
+
+let adminVisible = false;
+
+/* -------------------- Initialize -------------------- */
+(function init(){
+  // ensure admin password exists locally (set default to Rowland12# if none)
+  if(!localStorage.getItem(PASS_KEY)){ localStorage.setItem(PASS_KEY, 'Rowland12#'); }
+  loadState();
+  saveState();
+  renderAll();
+})();
+
+/* -------------------- Admin handling -------------------- */
+function getPass(){ return localStorage.getItem(PASS_KEY); }
+function checkPass(p){ return p === getPass(); }
+loginBtn.addEventListener('click', ()=>{
+  const p = adminPassInput.value.trim();
+  if(!p){ alert('Enter password.'); return; }
+  if(checkPass(p)){
+    adminPassInput.value = '';
+    setupSection.style.display = 'block';
+    alert('Admin unlocked (local only).');
+    populateInputsFromState();
+  } else {
+    alert('Wrong password.');
+  }
+});
+toggleAdminBtn.addEventListener('click', ()=>{
+  adminVisible = !adminVisible;
+  adminArea.classList.toggle('show', adminVisible);
+  if(!adminVisible) setupSection.style.display = 'none';
+});
+
+/* -------------------- File inputs -------------------- */
+function readFileAsDataURL(file, cb){
+  const r = new FileReader();
+  r.onload = e => cb(e.target.result);
+  r.readAsDataURL(file);
+}
+siteLogoInput.addEventListener('change', (e)=>{
+  const f = e.target.files[0]; if(!f) return;
+  readFileAsDataURL(f, (data)=>{ state.competitionLogo = data; siteLogoEl.src = data; siteLogoPreview.innerHTML = '<img src="'+data+'" style="width:64px;height:64px;border-radius:8px"/>'; saveState(); });
+});
+teamALogoInput.addEventListener('change',(e)=>{
+  const f = e.target.files[0]; if(!f) return;
+  readFileAsDataURL(f,(data)=>{ state.teamA.logo = data; renderAll(); saveState(); });
+});
+teamBLogoInput.addEventListener('change',(e)=>{
+  const f = e.target.files[0]; if(!f) return;
+  readFileAsDataURL(f,(data)=>{ state.teamB.logo = data; renderAll(); saveState(); });
+});
+
+/* -------------------- Setup save/clear -------------------- */
+saveSetup.addEventListener('click', ()=>{
+  state.teamA.name = teamANameInput.value.trim() || 'Team A';
+  state.teamA.coach = teamACoachInput.value.trim() || '—';
+  state.teamA.players = teamAPlayersInput.value.split('\n').map(s=>s.trim()).filter(Boolean);
+  state.teamB.name = teamBNameInput.value.trim() || 'Team B';
+  state.teamB.coach = teamBCoachInput.value.trim() || '—';
+  state.teamB.players = teamBPlayersInput.value.split('\n').map(s=>s.trim()).filter(Boolean);
+  saveState(); renderAll(); alert('Setup saved.');
+});
+clearStorageBtn.addEventListener('click', ()=>{ if(confirm('Clear all saved data on this device?')) clearAll(); });
+resetBtn.addEventListener('click', ()=>{ if(confirm('Reset scores and events for this match?')){ state.teamA.score=0; state.teamB.score=0; state.events=[]; state.matchStatus='Not started'; saveState(); renderAll(); } });
+
+/* -------------------- Events & actions -------------------- */
+function nowStamp(){ const d = new Date(); return d.getHours().toString().padStart(2,'0')+':'+d.getMinutes().toString().padStart(2,'0'); }
+function pushEvent(ev){ state.events.unshift(ev); saveState(); renderEvents(); }
+function flashTeam(side){ const el = side==='A'? teamANameEl : teamBNameEl; el.classList.remove('flash-red'); void el.offsetWidth; el.classList.add('flash-red'); }
+
+function addGoal(team){
+  if(team==='A'){ state.teamA.score++; pushEvent({type:'Goal', team:'A', minute: eventMinute.value.trim() || nowStamp(), desc: `${state.teamA.name} scored`}); flashTeam('A'); playGoalSound(); }
+  else { state.teamB.score++; pushEvent({type:'Goal', team:'B', minute: eventMinute.value.trim() || nowStamp(), desc: `${state.teamB.name} scored`}); flashTeam('B'); playGoalSound(); }
+  saveState(); renderAll();
+}
+function addCard(team, color){
+  pushEvent({type: color+' card', team, minute: eventMinute.value.trim() || nowStamp(), desc: `${team==='A'?state.teamA.name:state.teamB.name} — ${color} card`});
+  if(color==='Red') flashTeam(team);
+  saveState(); renderAll();
+}
+function addAssist(team){
+  pushEvent({type:'Assist', team, minute: eventMinute.value.trim() || nowStamp(), desc: `${team==='A'?state.teamA.name:state.teamB.name} — Assist`});
+  saveState(); renderEvents();
+}
+function addSub(team){
+  const desc = prompt('Substitution (Out: Player — In: Player)');
+  if(!desc) return;
+  pushEvent({type:'Substitution', team, minute: eventMinute.value.trim() || nowStamp(), desc});
+  saveState(); renderAll();
+}
+function addManual(){
+  const minute = eventMinute.value.trim() || nowStamp();
+  const desc = eventDesc.value.trim();
+  if(!desc){ alert('Enter description'); return; }
+  pushEvent({type:'Event', team:'', minute, desc});
+  eventDesc.value=''; eventMinute.value='';
+}
+
+/* Quick button listeners */
+goalA.addEventListener('click', ()=>addGoal('A'));
+goalB.addEventListener('click', ()=>addGoal('B'));
+redA.addEventListener('click', ()=>addCard('A','Red'));
+redB.addEventListener('click', ()=>addCard('B','Red'));
+yellowA.addEventListener('click', ()=>addCard('A','Yellow'));
+yellowB.addEventListener('click', ()=>addCard('B','Yellow'));
+assistA.addEventListener('click', ()=>addAssist('A'));
+assistB.addEventListener('click', ()=>addAssist('B'));
+subA.addEventListener('click', ()=>addSub('A'));
+subB.addEventListener('click', ()=>addSub('B'));
+addEventBtn.addEventListener('click', addManual);
+addSubBtn.addEventListener('click', ()=>{ const desc = prompt('Substitution (Out: Player — In: Player)'); if(desc) { pushEvent({type:'Substitution', team:'', minute: eventMinute.value.trim() || nowStamp(), desc}); saveState(); renderAll(); } });
+
+/* -------------------- Rendering -------------------- */
+function renderAll(){
+  teamANameEl.textContent = state.teamA.name;
+  teamBNameEl.textContent = state.teamB.name;
+  teamACoachEl.textContent = 'Coach: ' + (state.teamA.coach || '—');
+  teamBCoachEl.textContent = 'Coach: ' + (state.teamB.coach || '—');
+  teamAPlayersEl.textContent = (state.teamA.players||[]).slice(0,5).join(', ') || '—';
+  teamBPlayersEl.textContent = (state.teamB.players||[]).slice(0,5).join(', ') || '—';
+  scoreEl.textContent = `${state.teamA.score} — ${state.teamB.score}`;
+  matchStatusEl.textContent = state.matchStatus || 'Not started';
+  matchTimeEl.textContent = state.matchTime || "0'";
+  siteLogoEl.src = state.competitionLogo || '';
+  teamALogoEl.src = state.teamA.logo || '';
+  teamBLogoEl.src = state.teamB.logo || '';
+  renderEvents();
+}
+function renderEvents(){
+  eventFeed.innerHTML = '';
+  if(!state.events.length){ eventFeed.innerHTML = '<div class="muted">No events yet.</div>'; return; }
+  state.events.forEach(ev=>{
+    const div = document.createElement('div'); div.className='ev';
+    const teamName = ev.team==='A'? state.teamA.name : ev.team==='B'? state.teamB.name : '';
+    div.innerHTML = `<div style="display:flex; justify-content:space-between; gap:8px;"><div><strong>${ev.type}</strong>${teamName? ' — ' + teamName : ''}</div><div class="muted">${ev.minute}</div></div>
+      <div style="margin-top:6px;">${ev.desc}</div>`;
+    eventFeed.appendChild(div);
+  });
+}
+
+/* -------------------- Sound -------------------- */
+let audioCtx = null;
+function playGoalSound(){
+  try{
+    if(!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    const ctx = audioCtx; const t = ctx.currentTime;
+    const freqs = [523.25,659.25,783.99];
+    freqs.forEach((f,i)=>{
+      const o = ctx.createOscillator();
+      const g = ctx.createGain();
+      o.type='sine'; o.frequency.value=f;
+      g.gain.value=0.0001;
+      o.connect(g); g.connect(ctx.destination);
+      o.start(t + i*0.03);
+      g.gain.setValueAtTime(0.0001, t + i*0.03);
+      g.gain.exponentialRampToValueAtTime(0.08, t + 0.03 + i*0.03);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + 0.62 + i*0.03);
+      o.stop(t + 0.62 + i*0.03);
+    });
+  }catch(e){ console.warn('Audio failed', e); }
+}
+
+/* -------------------- Helpers -------------------- */
+function populateInputsFromState(){
+  teamANameInput.value = state.teamA.name || '';
+  teamBNameInput.value = state.teamB.name || '';
+  teamACoachInput.value = state.teamA.coach || '';
+  teamBCoachInput.value = state.teamB.coach || '';
+  teamAPlayersInput.value = (state.teamA.players||[]).join('\n');
+  teamBPlayersInput.value = (state.teamB.players||[]).join('\n');
+  siteLogoPreview.innerHTML = state.competitionLogo? '<img src="'+state.competitionLogo+'" style="width:64px;height:64px;border-radius:8px"/>':'Preview';
+}
+
+/* allow quick save on Enter for manual event */
+eventDesc.addEventListener('keyup', (e)=>{ if(e.key==='Enter') addManual(); });
+
+/* expose small CSV export for events */
+window.exportEventsCSV = function(){
+  if(!state.events.length){ alert('No events'); return; }
+  const rows = [['Time','Type','Team','Desc']];
+  state.events.slice().reverse().forEach(ev=> rows.push([ev.minute,ev.type,ev.team,ev.desc]));
+  const csv = rows.map(r=> r.map(c=>'"'+String(c).replace(/"/g,'""')+'"').join(',')).join('\n');
+  const url = URL.createObjectURL(new Blob([csv],{type:'text/csv'}));
+  const a = document.createElement('a'); a.href=url; a.download='pfl_events.csv'; a.click();
+  URL.revokeObjectURL(url);
+};
+</script>
+</body>
 </html>
