@@ -5,1019 +5,219 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>PFL Live Scores</title>
 <style>
-  body { font-family: Arial, sans-serif; background: #000; color: #fff; margin:0; padding:0;}
-  header { background: gold; color: black; text-align: center; padding: 15px; font-size: 1.5em; font-weight: bold;}
-  table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-  th, td { border: 1px solid gold; padding: 10px; text-align: center; }
-  th { background: gold; color: black; }
-  tr.live { background-color: red; color: white; font-weight: bold; }
-  tr:nth-child(even):not(.live) { background-color: #222; }
-  tr:nth-child(odd):not(.live) { background-color: #111; }
-  .goal { animation: flash 0.5s; }
-  @keyframes flash { 0% { background-color: yellow; } 100% { background-color: inherit; } }
-  @media(max-width:600px) {
-    table, tr, th, td { font-size: 0.9em; }
-  }
+body { margin:0; font-family: Arial, sans-serif; background: linear-gradient(#111,#222); color:#fff;}
+header {background: gold; color:black; text-align:center; font-weight:bold; font-size:1.6em; padding:15px;}
+.container {padding:10px; max-width:1200px; margin:auto;}
+.card {background:#111; border:1px solid gold; border-radius:8px; padding:10px; margin-bottom:15px;}
+.card.live {border-top:4px solid red;}
+.card h3 {margin:0 0 10px 0; font-size:1.2em;}
+.match-row {display:flex; justify-content:space-between; align-items:center; padding:5px 0;}
+.team {font-weight:bold;}
+.score {font-size:1.4em;}
+.flash {animation: flash 0.5s;}
+@keyframes flash {0%{background-color:red;}100%{background-color:inherit;}}
+table {width:100%; border-collapse: collapse; margin-top:20px;}
+th,td {border:1px solid gold; padding:8px; text-align:center;}
+th {background:gold; color:black;}
+@media(max-width:600px){
+  .match-row {flex-direction: column; align-items:flex-start;}
+  .score {margin-top:5px;}
+}
 </style>
 </head>
 <body>
-
 <header>Pinnacle Football League - Live Scores</header>
+<div class="container">
+<h2>Live Matches</h2>
+<div id="liveMatches"></div>
+
+<h2>Next Fixtures</h2>
+<div id="nextFixtures"></div>
+
+<h2>League Table</h2>
+<table id="leagueTable">
+  <thead>
+    <tr><th>Team</th><th>MP</th><th>W</th><th>D</th><th>L</th><th>GF</th><th>GA</th><th>GD</th><th>Pts</th></tr>
+  </thead>
+  <tbody></tbody>
+</table>
+
+<h2>Semi-finals & Finals</h2>
+<div id="playoffs"></div>
 
 <audio id="goalSound">
   <source src="https://actions.google.com/sounds/v1/cartoon/clang_and_wobble.ogg" type="audio/ogg">
 </audio>
-
-<table id="matchesTable">
-  <thead>
-    <tr>
-      <th>Home Team</th>
-      <th>Away Team</th>
-      <th>Venue</th>
-      <th>Time</th>
-      <th>Score</th>
-    </tr>
-  </thead>
-  <tbody>
-    <!-- Matches will be injected here -->
-  </tbody>
-</table>
-
-<script>
-const DATA_URL = 'https://raw.githubusercontent.com/rowlandmayowa527-ai/pfl-livescore-center/main/data.json';
-let lastScores = {}; // store previous scores
-
-async function loadMatches() {
-  try {
-    const res = await fetch(DATA_URL + `?t=${Date.now()}`); // prevent cache
-    const matches = await res.json();
-
-    const tbody = document.querySelector("#matchesTable tbody");
-    tbody.innerHTML = "";
-
-    matches.forEach(match => {
-      const row = document.createElement("tr");
-      if(match.live) row.classList.add("live");
-
-      // Goal detection
-      const prev = lastScores[match.id] || {homeScore:0, awayScore:0};
-      if(match.homeScore > prev.homeScore) flashGoal(row, 'home');
-      if(match.awayScore > prev.awayScore) flashGoal(row, 'away');
-
-      lastScores[match.id] = {homeScore: match.homeScore, awayScore: match.awayScore};
-
-      row.innerHTML = `
-        <td>${match.home}</td>
-        <td>${match.away}</td>
-        <td>${match.venue}</td>
-        <td>${match.time}</td>
-        <td>${match.homeScore} - ${match.awayScore}</td>
-      `;
-      tbody.appendChild(row);
-    });
-  } catch(e) {
-    console.error("Failed to load match data:", e);
-  }
-}
-
-function flashGoal(row, team) {
-  // Play goal sound
-  const sound = document.getElementById("goalSound");
-  sound.play().catch(()=>{}); // avoid errors if autoplay blocked
-
-  // Flash the row briefly
-  row.classList.add("goal");
-  setTimeout(() => row.classList.remove("goal"), 500);
-}
-
-// Auto-refresh every 10 seconds
-loadMatches();
-setInterval(loadMatches, 10000);
-</script>
-
-</body>
-</html>
-  <aside>
-    <div class="card" id="fixturesCard">
-      <h3 style="margin:0;color:var(--gold)">Upcoming Fixtures</h3>
-      <div id="fixturesList" class="small">Loading…</div>
-    </div>
-
-    <div class="card" id="tableCard">
-      <h3 style="margin:0;color:var(--gold)">League Table</h3>
-      <div id="tableWrap" class="small">Loading…</div>
-    </div>
-
-    <div class="card" id="chartCard">
-      <h3 style="margin:0;color:var(--gold)">Stats (history)</h3>
-      <pre id="chartsPre">Loading…</pre>
-    </div>
-  </aside>
-
-  <section class="card" style="grid-column:1/3">
-    <h3 style="margin:0;color:var(--gold)">Past Results</h3>
-    <div id="archiveList" class="small">Loading…</div>
-  </section>
-</main>
-
-<footer>© Pinnacle Football League — Arcane Override Games</footer>
-<audio id="goalSound" src="https://actions.google.com/sounds/v1/alarms/beep_short.ogg"></audio>
-
-<script>
-const RAW_URL = 'https://raw.githubusercontent.com/rowlandmayowa527-ai/pfl-livescore-center/main/data.json';
-const POLL = 30000;
-let cached = null;
-let last = {home:-1,away:-1};
-
-async function fetchData(){
-  try{
-    const r = await fetch(RAW_URL + '?cachebust=' + Date.now());
-    if(!r.ok) throw new Error('fetch fail');
-    cached = await r.json();
-    renderAll();
-    document.getElementById('lastUpdated').innerText = 'Updated: ' + new Date().toLocaleTimeString();
-  }catch(e){
-    console.error(e);
-    document.getElementById('liveArea').innerText = 'Unable to fetch live data.';
-  }
-}
-
-function renderAll(){
-  renderLive();
-  renderFixtures();
-  renderTable();
-  renderCharts();
-  renderArchive();
-}
-
-function renderLive(){
-  const livePointer = cached.live;
-  const liveArea = document.getElementById('liveArea');
-  if(!livePointer){
-    // show next upcoming
-    const next = (cached.fixtures||[]).filter(f=>f.status==='upcoming').sort((a,b)=> new Date(a.date+' '+a.time) - new Date(b.date+' '+b.time))[0];
-    if(!next){ liveArea.innerHTML = '<div class="small">No matches scheduled.</div>'; last={home:-1,away:-1}; return; }
-    liveArea.innerHTML = `<div class="small">Next: <strong>${next.date} ${next.time}</strong> • ${next.home} vs ${next.away} <div class="small">Venue: ${next.venue}</div></div>`;
-    last={home:-1,away:-1};
-    return;
-  }
-  const f = (cached.fixtures||[]).find(x=>x.id===livePointer.id) || livePointer;
-  const hs = Number(f.homeScore||0);
-  const as = Number(f.awayScore||0);
-  const homeGoal = (last.home!==-1) && hs>last.home;
-  const awayGoal = (last.away!==-1) && as>last.away;
-  const html = `
-    <div class="liveRow">
-      <div style="width:35%"><div class="team">${f.home}</div><div class="small">Venue: ${f.venue||'—'}</div></div>
-      <div style="text-align:center">
-        <div class="score ${homeGoal?'goalFlash':''}">${hs}</div>
-        <div style="font-size:18px">:</div>
-        <div class="score ${awayGoal?'goalFlash':''}">${as}</div>
-      </div>
-      <div style="width:35%; text-align:right"><div class="team">${f.away}</div><div class="small">${f.date} ${f.time}</div></div>
-    </div>
-    <div style="margin-top:8px" class="small">Status: ${f.status||'live'} • Last update: ${new Date(f.timestamp||cached.meta.updatedAt).toLocaleString()}</div>
-  `;
-  liveArea.innerHTML = html;
-  if(homeGoal || awayGoal){ document.getElementById('goalSound').play().catch(()=>{}); }
-  last.home = hs; last.away = as;
-}
-
-function renderFixtures(){
-  const list = (cached.fixtures||[]).slice().sort((a,b)=> new Date(a.date+' '+(a.time||'')) - new Date(b.date+' '+(b.time||'')));
-  const el = document.getElementById('fixturesList');
-  if(!list.length){ el.innerHTML = '<div class="small">No fixtures</div>'; return; }
-  el.innerHTML = list.map(f=>`<div style="margin-bottom:6px;"><strong style="color:var(--gold)">${f.date} ${f.time}</strong> — ${f.home} vs ${f.away}<div class="small">Venue: ${f.venue} • Status: ${f.status}</div></div>`).join('');
-}
-
-function renderTable(){
-  const archive = cached.archive || [];
-  const table = {};
-  archive.forEach(m=>{
-    [m.home,m.away].forEach(t=>{ if(!table[t]) table[t]={P:0,W:0,D:0,L:0,GF:0,GA:0,GD:0,Pts:0}; });
-    table[m.home].P++; table[m.away].P++;
-    table[m.home].GF += Number(m.homeScore||0); table[m.home].GA += Number(m.awayScore||0);
-    table[m.away].GF += Number(m.awayScore||0); table[m.away].GA += Number(m.homeScore||0);
-    if(m.homeScore>m.awayScore){ table[m.home].W++; table[m.away].L++; table[m.home].Pts+=3; }
-    else if(m.homeScore<m.awayScore){ table[m.away].W++; table[m.home].L++; table[m.away].Pts+=3; }
-    else { table[m.home].D++; table[m.away].D++; table[m.home].Pts++; table[m.away].Pts++; }
-    table[m.home].GD = table[m.home].GF - table[m.home].GA;
-    table[m.away].GD = table[m.away].GF - table[m.away].GA;
-  });
-  const wrap = document.getElementById('tableWrap');
-  if(Object.keys(table).length===0){ wrap.innerHTML = '<div class="small">Table will appear after matches end</div>'; return; }
-  let html = '<table><thead><tr><th>Team</th><th>P</th><th>W</th><th>D</th><th>L</th><th>GF</th><th>GA</th><th>GD</th><th>Pts</th></tr></thead><tbody>';
-  Object.entries(table).sort((a,b)=> b[1].Pts - a[1].Pts).forEach(([team,st])=> html+=`<tr><td>${team}</td><td>${st.P}</td><td>${st.W}</td><td>${st.D}</td><td>${st.L}</td><td>${st.GF}</td><td>${st.GA}</td><td>${st.GD}</td><td>${st.Pts}</td></tr>`);
-  html += '</tbody></table>';
-  wrap.innerHTML = html;
-}
-
-function renderCharts(){
-  const archive = cached.archive || [];
-  const teams = {};
-  archive.forEach(m=>{ [m.home,m.away].forEach(t=>{ if(!teams[t]) teams[t]={G:0}; });
-    teams[m.home].G += Number(m.homeScore||0); teams[m.away].G += Number(m.awayScore||0);
-  });
-  const bars = n=>'█'.repeat(Math.min(n,30));
-  let out='Goals:\\n';
-  Object.entries(teams).forEach(([t,v])=> out += `${t} ${bars(v.G)} ${v.G}\\n`);
-  document.getElementById('chartsPre').innerText = out || 'No stats yet';
-}
-
-function renderArchive(){
-  const a = cached.archive || [];
-  const el = document.getElementById('archiveList');
-  if(!a.length){ el.innerHTML='<div class="small">No previous matches</div>'; return; }
-  el.innerHTML = a.slice().reverse().map(m=>`<div style="margin-bottom:6px;"><strong>${m.date}</strong> • ${m.home} ${m.homeScore} - ${m.awayScore} ${m.away} <div class="small">Venue: ${m.venue||'—'}</div></div>`).join('');
-}
-
-/* start polling */
-fetchData();
-setInterval(fetchData, POLL);
-</script>
-</body>
-</html>    .score{ font-size:36px; }
-  }
-</style>
-</head>
-<body>
-<header>
-  <div>
-    <h1>Pinnacle Football League — LiveScore Center</h1>
-    <div class="small">Organised by Arcane Override Games</div>
-  </div>
-</header>
-
-<main>
-  <section class="card" id="liveSection">
-    <div id="liveArea">
-      <div class="meta">Loading live match…</div>
-    </div>
-  </section>
-
-  <aside>
-    <div class="card" id="fixturesCard">
-      <h3 style="margin:0;color:var(--gold)">Next Fixtures</h3>
-      <div id="fixtureList" class="small">Loading…</div>
-    </div>
-
-    <div class="card" id="tableCard">
-      <h3 style="margin:0;color:var(--gold)">League Table</h3>
-      <div id="tableWrap" class="small">Loading…</div>
-    </div>
-
-    <div class="card" id="chartsCard">
-      <h3 style="margin:0;color:var(--gold)">Stats (history)</h3>
-      <pre id="chartsPre">Loading charts…</pre>
-    </div>
-  </aside>
-
-  <section class="card" style="grid-column:1/3">
-    <div style="display:flex; gap:12px; align-items:flex-start; flex-wrap:wrap;">
-      <div style="flex:1; min-width:280px;">
-        <h3 style="margin:0;color:var(--gold)">Fan Predictions</h3>
-        <div class="small">Select before kick-off (name required)</div>
-        <div style="margin-top:8px;">
-          <input id="predName" placeholder="Your name" style="padding:8px;border-radius:8px;border:1px solid rgba(255,255,255,0.03);background:#0b0b0b;color:#fff;width:200px">
-          <div class="predictionRow">
-            <label><input type="radio" name="pred" value="Home Win"> Home Win</label>
-            <label><input type="radio" name="pred" value="Draw"> Draw</label>
-            <label><input type="radio" name="pred" value="Away Win"> Away Win</label>
-            <button class="btn btnGold" onclick="submitPrediction()">Submit</button>
-          </div>
-          <div id="predStats" class="small" style="margin-top:8px"></div>
-        </div>
-      </div>
-
-      <div style="flex:1; min-width:280px;">
-        <h3 style="margin:0;color:var(--gold)">Fan Comments</h3>
-        <div class="small">Please provide your name</div>
-        <div class="commentBox" style="margin-top:8px">
-          <input id="commentName" placeholder="Your name" style="padding:8px;border-radius:8px;border:1px solid rgba(255,255,255,0.03);background:#0b0b0b;color:#fff;width:200px">
-          <textarea id="commentText" rows="3" placeholder="Write a comment…"></textarea>
-          <button class="btn" style="margin-top:6px" onclick="submitComment()">Post Comment</button>
-        </div>
-        <div id="commentList" class="small" style="margin-top:8px"></div>
-      </div>
-    </div>
-  </section>
-</main>
-
-<footer>© Pinnacle Football League — Arcane Override Games</footer>
-
-<script>
-/* ===== CONFIG ===== */
-const RAW_DATA_URL = 'https://raw.githubusercontent.com/rowlandmayowa527-ai/pfl-livescore-center/main/data.json';
-const POLL_INTERVAL = 5000; // ms
-
-/* state */
-let cachedData = null;
-let lastLiveScores = { home: -1, away: -1 };
-
-/* fetch & render */
-async function fetchData(){
-  try{
-    const r = await fetch(RAW_DATA_URL + '?cachebust=' + Date.now());
-    if(!r.ok) throw new Error('Failed to fetch data.json');
-    const j = await r.json();
-    cachedData = j;
-    renderAll();
-  }catch(err){
-    console.error(err);
-    document.getElementById('liveArea').innerHTML = '<div class="meta">Unable to fetch live data.</div>';
-  }
-}
-
-function renderAll(){
-  renderLive();
-  renderFixtures();
-  renderTable();
-  renderCharts();
-  renderComments();
-  renderPredictions();
-}
-
-function renderLive(){
-  const live = cachedData.live;
-  const area = document.getElementById('liveArea');
-  if(!live){
-    area.innerHTML = `<div class="meta">No match is live right now. Check next fixtures.</div>`;
-    lastLiveScores = { home:-1, away:-1 };
-    return;
-  }
-  // build teams and score
-  const home = live.homeTeam || 'Home';
-  const away = live.awayTeam || 'Away';
-  const hs = Number(live.homeScore || 0);
-  const as = Number(live.awayScore || 0);
-
-  // detect goal events
-  const homeGoal = hs > lastLiveScores.home;
-  const awayGoal = as > lastLiveScores.away;
-
-  const homeNameHtml = `<div class="teamCol"><div class="teamName">${home}</div><div class="meta">Coach: ${live.homeCoach||'—'}</div></div>`;
-  const awayNameHtml = `<div class="teamCol" style="text-align:right;"><div class="teamName">${away}</div><div class="meta">Coach: ${live.awayCoach||'—'}</div></div>`;
-  const scoreHtml = `<div class="score ${homeGoal ? 'goalFlash':''}">${hs}</div><div class="score" style="font-size:22px">:</div><div class="score ${awayGoal ? 'goalFlash':''}" style="font-size:44px">${as}</div>`;
-
-  area.innerHTML = `
-    <div class="liveBox">
-      ${homeNameHtml}
-      <div style="display:flex;align-items:center;gap:8px">${scoreHtml}</div>
-      ${awayNameHtml}
-    </div>
-    <div style="margin-top:8px" class="meta">Status: ${live.status || 'not started'} • ${new Date(live.timestamp || cachedData.meta.updatedAt).toLocaleString()}</div>
-    <div style="margin-top:10px" class="small"><strong>Subs/Notes:</strong><br>${(live.subs||[]).join('<br>') || 'No notes'}</div>
-    <div style="margin-top:10px" class="small"><strong>Player Ratings:</strong><br>${(live.homeRatings||[]).join(', ') || '—'} | ${(live.awayRatings||[]).join(', ') || '—'}</div>
-  `;
-
-  // play sound on goal
-  if(homeGoal || awayGoal){
-    const s = new Audio('https://actions.google.com/sounds/v1/alarms/beep_short.ogg');
-    s.play().catch(()=>{ /* autoplay may block on mobile until user interacts */ });
-  }
-
-  lastLiveScores = { home: hs, away: as };
-}
-
-function renderFixtures(){
-  const list = cachedData.fixtures || [];
-  const out = document.getElementById('fixtureList');
-  if(!list.length){ out.innerHTML = '<div class="small">No fixtures</div>'; return; }
-  out.innerHTML = list.map(f => `<div style="margin-bottom:6px;"><strong style="color:var(--gold)">${f.date} ${f.time}</strong> — ${f.home} vs ${f.away} <div class="small">Venue: ${f.venue}</div></div>`).join('');
-}
-
-function renderTable(){
-  const archive = cachedData.archive || [];
-  // compute table
-  const table = {};
-  archive.forEach(m=>{
-    [m.homeTeam, m.awayTeam].forEach(t => { if(!table[t]) table[t] = {P:0,W:0,D:0,L:0,GF:0,GA:0,GD:0,Pts:0}; });
-    table[m.homeTeam].P++; table[m.awayTeam].P++;
-    table[m.homeTeam].GF += m.homeScore; table[m.homeTeam].GA += m.awayScore;
-    table[m.awayTeam].GF += m.awayScore; table[m.awayTeam].GA += m.homeScore;
-    if(m.homeScore > m.awayScore){ table[m.homeTeam].W++; table[m.awayTeam].L++; table[m.homeTeam].Pts += 3; }
-    else if(m.homeScore < m.awayScore){ table[m.awayTeam].W++; table[m.homeTeam].L++; table[m.awayTeam].Pts += 3; }
-    else { table[m.homeTeam].D++; table[m.awayTeam].D++; table[m.homeTeam].Pts++; table[m.awayTeam].Pts++; }
-  });
-  // render table
-  const wrap = document.getElementById('tableWrap');
-  if(Object.keys(table).length === 0){ wrap.innerHTML = '<div class="small">Table will appear after matches are played.</div>'; return; }
-  let html = '<table><thead><tr><th>Team</th><th>P</th><th>W</th><th>D</th><th>L</th><th>GF</th><th>GA</th><th>GD</th><th>Pts</th></tr></thead><tbody>';
-  Object.entries(table).sort((a,b)=> b[1].Pts - a[1].Pts).forEach(([team,st])=>{
-    html += `<tr><td>${team}</td><td>${st.P}</td><td>${st.W}</td><td>${st.D}</td><td>${st.L}</td><td>${st.GF}</td><td>${st.GA}</td><td>${st.GD}</td><td>${st.Pts}</td></tr>`;
-  });
-  html += '</tbody></table>';
-  wrap.innerHTML = html;
-}
-
-function renderCharts(){
-  // aggregates from archive
-  const archive = cachedData.archive || [];
-  const teams = {};
-  archive.forEach(m=>{
-    [m.homeTeam, m.awayTeam].forEach(t => { if(!teams[t]) teams[t] = {G:0,A:0,Y:0,R:0}; });
-    // homeStats format: [goals, assists, yellow, red]
-    const h = m.homeStats || [0,0,0,0];
-    const a = m.awayStats || [0,0,0,0];
-    teams[m.homeTeam].G += Number(h[0]||0); teams[m.homeTeam].A += Number(h[1]||0); teams[m.homeTeam].Y += Number(h[2]||0); teams[m.homeTeam].R += Number(h[3]||0);
-    teams[m.awayTeam].G += Number(a[0]||0); teams[m.awayTeam].A += Number(a[1]||0); teams[m.awayTeam].Y += Number(a[2]||0); teams[m.awayTeam].R += Number(a[3]||0);
-  });
-  // build simple text bars
-  const makeBars = (n)=> '█'.repeat(Math.min(n,30));
-  let out = 'Goals:\\n';
-  Object.entries(teams).forEach(([t,v])=> out += `${t} ${makeBars(v.G)} ${v.G}\n`);
-  out += '\\nAssists:\\n';
-  Object.entries(teams).forEach(([t,v])=> out += `${t} ${makeBars(v.A)} ${v.A}\n`);
-  out += '\\nYellow Cards:\\n';
-  Object.entries(teams).forEach(([t,v])=> out += `${t} ${makeBars(v.Y)} ${v.Y}\n`);
-  out += '\\nRed Cards:\\n';
-  Object.entries(teams).forEach(([t,v])=> out += `${t} ${makeBars(v.R)} ${v.R}\n`);
-  document.getElementById('chartsPre').innerText = out;
-}
-
-function renderComments(){
-  const comments = cachedData.comments || [];
-  const list = document.getElementById('commentList');
-  if(!comments.length){ list.innerHTML = '<div class="small">No comments yet.</div>'; return; }
-  list.innerHTML = comments.slice().reverse().map(c => `<div style="margin-bottom:6px;"><strong>${escapeHtml(c.name)}:</strong> ${escapeHtml(c.text)}</div>`).join('');
-}
-
-function renderPredictions(){
-  const preds = cachedData.predictions || [];
-  const counts = {home:0,draw:0,away:0};
-  preds.forEach(p => { if(p.choice === 'Home Win') counts.home++; else if(p.choice === 'Draw') counts.draw++; else counts.away++; });
-  document.getElementById('predStats').innerText = `Home Win: ${counts.home} | Draw: ${counts.draw} | Away Win: ${counts.away}`;
-}
-
-/* ====== fan actions ====== */
-function submitComment(){
-  const name = document.getElementById('commentName').value.trim();
-  const text = document.getElementById('commentText').value.trim();
-  if(!name || !text) return alert('Please enter your name and comment.');
-  const c = { name, text, ts: new Date().toISOString() };
-  // POST back to admin workflow is not possible directly; we append locally via GitHub if admin publishes,
-  // but in the meantime, we store comment in localStorage on the fan device (so they see their comment) and optionally call a public comments endpoint.
-  // Simpler: send comment to GitHub via Issues or use admin publish. We'll store in localStorage as "pendingComments".
-  let pend = JSON.parse(localStorage.getItem('pfl_pending_comments') || '[]');
-  pend.push(c);
-  localStorage.setItem('pfl_pending_comments', JSON.stringify(pend));
-  alert('Thanks — your comment is saved locally. Admin can import pending comments into data.json via Export/Import.');
-  document.getElementById('commentName').value=''; document.getElementById('commentText').value='';
-  renderLocalPendingComments();
-}
-
-function renderLocalPendingComments(){
-  const pend = JSON.parse(localStorage.getItem('pfl_pending_comments') || '[]');
-  // show locally on page as well
-  if(pend.length){
-    const list = document.getElementById('commentList');
-    let html = '<div style="margin-top:8px;color:var(--muted)"><strong>Your (local) comments:</strong></div>';
-    html += pend.slice().reverse().map(c => `<div style="margin-top:6px;"><strong>${escapeHtml(c.name)}:</strong> ${escapeHtml(c.text)}</div>`).join('');
-    list.innerHTML = (cachedData.comments||[]).slice().reverse().map(c => `<div style="margin-bottom:6px;"><strong>${escapeHtml(c.name)}:</strong> ${escapeHtml(c.text)}</div>`).join('') + html;
-  }
-}
-
-function submitPrediction(){
-  const name = document.getElementById('predName').value.trim();
-  if(!name) return alert('Enter your name first');
-  const sel = document.querySelector('input[name="pred"]:checked');
-  if(!sel) return alert('Pick an option');
-  const obj = { name, choice: sel.value, ts: new Date().toISOString() };
-  // locally store pending predictions -- admin imports later
-  let pending = JSON.parse(localStorage.getItem('pfl_pending_predictions') || '[]');
-  pending.push(obj);
-  localStorage.setItem('pfl_pending_predictions', JSON.stringify(pending));
-  alert('Prediction saved locally. Admin can import these into data.json if desired.');
-  renderLocalPendingPredictions();
-}
-
-function renderLocalPendingPredictions(){
-  const pending = JSON.parse(localStorage.getItem('pfl_pending_predictions') || '[]');
-  // show counts including pending
-  const counts = {home:0,draw:0,away:0};
-  (cachedData.predictions||[]).concat(pending).forEach(p => { if(p.choice==='Home Win') counts.home++; else if(p.choice==='Draw') counts.draw++; else counts.away++; });
-  document.getElementById('predStats').innerText = `Home Win: ${counts.home} | Draw: ${counts.draw} | Away Win: ${counts.away}`;
-}
-
-/* helper */
-function escapeHtml(s){ return String(s).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
-
-/* initial fetch + poll */
-fetchData();
-setInterval(fetchData, POLL_INTERVAL);
-renderLocalPendingComments();
-renderLocalPendingPredictions();
-</script>
-</body>
-</html>    <audio id="goalSound" src="https://actions.google.com/sounds/v1/alarms/beep_short.ogg"></audio>
-
-    <!-- Predictions -->
-    <div id="predictions">
-      <h3>Predict the Result:</h3>
-      <label><input type="radio" name="prediction" value="Home Win"> Home Win</label>
-      <label><input type="radio" name="prediction" value="Draw"> Draw</label>
-      <label><input type="radio" name="prediction" value="Away Win"> Away Win</label>
-      <button onclick="submitPrediction()">Submit</button>
-      <div id="predictionList"></div>
-    </div>
-
-    <!-- Comments -->
-    <div id="comments">
-      <h3>Fan Comments:</h3>
-      <textarea id="commentInput" rows="3" placeholder="Type your comment..."></textarea>
-      <button onclick="submitComment()">Submit</button>
-      <div id="commentList"></div>
-    </div>
-  </div>
-
-  <!-- Next Fixtures -->
-  <div id="fixtures">
-    <h2>Next Fixtures</h2>
-    <div id="fixtureList"></div>
-  </div>
-
-  <!-- League Table -->
-  <div id="league">
-    <h2>League Table</h2>
-    <table id="leagueTable">
-      <thead>
-        <tr><th>Team</th><th>P</th><th>W</th><th>D</th><th>L</th><th>GF</th><th>GA</th><th>GD</th><th>Pts</th></tr>
-      </thead>
-      <tbody></tbody>
-    </table>
-  </div>
-
-  <!-- Stats Charts -->
-  <div id="charts">
-    <h2>Stats Charts (History)</h2>
-    <pre id="goalChart"></pre>
-    <pre id="assistChart"></pre>
-    <pre id="yellowChart"></pre>
-    <pre id="redChart"></pre>
-  </div>
-
-  <!-- Previous Matches -->
-  <div id="archive">
-    <h2>Previous Matches</h2>
-    <div id="archiveList"></div>
-  </div>
-
-<script>
-let lastHomeScore=0,lastAwayScore=0;
-
-// Auto-refresh every 3 sec
-setInterval(loadAll,3000);
-
-function loadAll(){
-  loadMatch();
-  loadArchive();
-  loadLeague();
-  loadFixtures();
-  loadCharts();
-  loadComments();
-  loadPredictions();
-}
-
-// Load Live Match
-function loadMatch(){
-  const match=JSON.parse(localStorage.getItem('currentMatch'));
-  if(match){
-    document.getElementById('homeTeam').innerText=match.homeTeam;
-    document.getElementById('awayTeam').innerText=match.awayTeam;
-    document.getElementById('subs').innerHTML=match.subs.join('<br>');
-    document.getElementById('form').innerHTML=`<strong>Form:</strong> ${match.homeTeam}:${match.homeForm} | ${match.awayTeam}:${match.awayForm}`;
-    document.getElementById('ratings').innerHTML=`<strong>Player Ratings:</strong><br>${match.homeRatings.join(', ')}<br>${match.awayRatings.join(', ')}`;
-
-    // Star player
-    const allRatings=[...match.homeRatings,...match.awayRatings];
-    let topPlayer=''; let topScore=-1;
-    allRatings.forEach(r=>{
-      const [name,score]=r.split('-'); if(Number(score)>topScore){topScore=Number(score); topPlayer=name;}})
-    document.getElementById('starPlayer').innerHTML=`⭐ Star Player: ${topPlayer} (${topScore})`;
-
-    const homeScoreEl=document.getElementById('homeScore');
-    const awayScoreEl=document.getElementById('awayScore');
-
-    if(match.homeScore>lastHomeScore) flashGoal(homeScoreEl);
-    if(match.awayScore>lastAwayScore) flashGoal(awayScoreEl);
-
-    homeScoreEl.innerText=match.homeScore;
-    awayScoreEl.innerText=match.awayScore;
-
-    lastHomeScore=match.homeScore;
-    lastAwayScore=match.awayScore;
-  }
-}
-
-// Flash Goal
-function flashGoal(el){
-  document.getElementById('goalSound').play();
-  el.classList.add('goal');
-  setTimeout(()=>el.classList.remove('goal'),1000);
-}
-
-// Load Previous Matches
-function loadArchive(){
-  const archive=JSON.parse(localStorage.getItem('matchArchive'))||[];
-  const archiveDiv=document.getElementById('archiveList');
-  archiveDiv.innerHTML='';
-  archive.sort((a,b)=>new Date(b.timestamp)-new Date(a.timestamp));
-  archive.forEach(m=>{
-    archiveDiv.innerHTML+=`<div>
-      <strong>${m.homeTeam} ${m.homeScore}:${m.awayScore} ${m.awayTeam}</strong><br>
-      <small>Subs:${m.subs.join(', ')}</small><br>
-      <small>Form:${m.homeTeam}:${m.homeForm} | ${m.awayTeam}:${m.awayForm}</small><br>
-      <small>Ratings:${m.homeRatings.join(', ')} | ${m.awayRatings.join(', ')}</small><br>
-      <small>Stats: Goals/Assists/Yellow/Red - ${m.homeStats.join('/')} | ${m.awayStats.join('/')}</small>
-      <hr>
-    </div>`;
-  });
-}
-
-// League Table
-function loadLeague(){
-  const archive=JSON.parse(localStorage.getItem('matchArchive'))||[];
-  const tableData={};
-  archive.forEach(m=>{
-    [m.homeTeam,m.awayTeam].forEach(t=>{if(!tableData[t]) tableData[t]={P:0,W:0,D:0,L:0,GF:0,GA:0,GD:0,Pts:0};});
-    tableData[m.homeTeam].P++; tableData[m.awayTeam].P++;
-    tableData[m.homeTeam].GF+=m.homeScore; tableData[m.homeTeam].GA+=m.awayScore;
-    tableData[m.awayTeam].GF+=m.awayScore; tableData[m.awayTeam].GA+=m.homeScore;
-    tableData[m.homeTeam].GD=tableData[m.homeTeam].GF-tableData[m.homeTeam].GA;
-    tableData[m.awayTeam].GD=tableData[m.awayTeam].GF-tableData[m.awayTeam].GA;
-    if(m.homeScore>m.awayScore){ tableData[m.homeTeam].W++; tableData[m.awayTeam].L++; tableData[m.homeTeam].Pts+=3; }
-    else if(m.homeScore<m.awayScore){ tableData[m.awayTeam].W++; tableData[m.homeTeam].L++; tableData[m.awayTeam].Pts+=3; }
-    else { tableData[m.homeTeam].D++; tableData[m.awayTeam].D++; tableData[m.homeTeam].Pts++; tableData[m.awayTeam].Pts++; }
-  });
-  const tbody=document.querySelector('#leagueTable tbody'); tbody.innerHTML='';
-  Object.entries(tableData).sort((a,b)=>b[1].Pts-a[1].Pts).forEach(([team,stats])=>{
-    tbody.innerHTML+=`<tr><td>${team}</td><td>${stats.P}</td><td>${stats.W}</td><td>${stats.D}</td><td>${stats.L}</td><td>${stats.GF}</td><td>${stats.GA}</td><td>${stats.GD}</td><td>${stats.Pts}</td></tr>`;
-  });
-}
-
-// Next Fixtures
-function loadFixtures(){
-  const fixtures=JSON.parse(localStorage.getItem('nextFixtures'))||[];
-  const fixtureDiv=document.getElementById('fixtureList'); fixtureDiv.innerHTML='';
-  fixtures.sort((a,b)=>new Date(a.date)-new Date(b.date)).forEach(f=>{
-    fixtureDiv.innerHTML+=`<div>${f.date}: ${f.home} vs ${f.away}</div>`;
-  });
-}
-
-// Stats Charts
-function loadCharts(){
-  const archive=JSON.parse(localStorage.getItem('matchArchive'))||[];
-  const teams={};
-  archive.forEach(m=>{
-    [m.homeTeam,m.awayTeam].forEach(t=>{if(!teams[t]) teams[t]={G:0,A:0,Y:0,R:0};});
-    teams[m.homeTeam].G+=m.homeStats[0]; teams[m.homeTeam].A+=m.homeStats[1]; teams[m.homeTeam].Y+=m.homeStats[2]; teams[m.homeTeam].R+=m.homeStats[3];
-    teams[m.awayTeam].G+=m.awayStats[0]; teams[m.awayTeam].A+=m.awayStats[1]; teams[m.awayTeam].Y+=m.awayStats[2]; teams[m.awayTeam].R+=m.awayStats[3];
-  });
-  let goalChart='Goals:\n',assistChart='Assists:\n',yellowChart='Yellow Cards:\n',redChart='Red Cards:\n';
-  Object.entries(teams).forEach(([t,v])=>{
-    goalChart+=`${t} ${'█'.repeat(v.G)} ${v.G}\n`;
-    assistChart+=`${t} ${'█'.repeat(v.A)} ${v.A}\n`;
-    yellowChart+=`${t} ${'█'.repeat(v.Y)} ${v.Y}\n`;
-    redChart+=`${t} ${'█'.repeat(v.R)} ${v.R}\n`;
-  });
-  document.getElementById('goalChart').innerText=goalChart;
-  document.getElementById('assistChart').innerText=assistChart;
-  document.getElementById('yellowChart').innerText=yellowChart;
-  document.getElementById('redChart').innerText=redChart;
-}
-
-// Comments
-function loadComments(){
-  const comments=JSON.parse(localStorage.getItem('comments'))||[];
-  const div=document.getElementById('commentList'); div.innerHTML='';
-  comments.forEach(c=>{div.innerHTML+=`<div>${c}</div>`;});
-}
-function submitComment(){
-  const input=document.getElementById('commentInput'); if(!input.value) return;
-  const comments=JSON.parse(localStorage.getItem('comments'))||[];
-  comments.push(input.value); localStorage.setItem('comments',JSON.stringify(comments)); input.value='';
-  loadComments();
-}
-
-// Predictions
-function loadPredictions(){
-  const preds=JSON.parse(localStorage.getItem('predictions'))||[];
-  const div=document.getElementById('predictionList'); div.innerHTML='';
-  const counts={home:0,draw:0,away:0};
-  preds.forEach(p=>{if(p==='Home Win') counts.home++; else if(p==='Draw') counts.draw++; else counts.away++;});
-  div.innerHTML=`Home Win: ${counts.home} | Draw: ${counts.draw} | Away Win: ${counts.away}`;
-}
-function submitPrediction(){
-  const sel=document.querySelector('input[name="prediction"]:checked');
-  if(!sel) return alert('Select an option'); const preds=JSON.parse(localStorage.getItem('predictions'))||[];
-  preds.push(sel.value); localStoragematches yet.</div>'; return; }
-    // Sort: live first, then newest createdAt desc
-    matches.sort((a,b)=>{
-      if(a.status === 'live' && b.status !== 'live') return -1;
-      if(b.status === 'live' && a.status !== 'live') return 1;
-      return (b.createdAt||'').localeCompare(a.createdAt||'');
-    });
-
-    fixturesRoot.innerHTML = '';
-    matches.forEach(m=>{
-      const el = document.createElement('div');
-      el.className = 'match' + (m.status==='live' ? ' live' : '');
-      el.innerHTML = `
-        <div style="display:flex;gap:12px;align-items:center;">
-          <div class="team">
-            <img src="${m.home?.logoUrl || 'pfl-logo.png'}" class="tlogo" alt="home">
-            <div>
-              <div class="tname">${m.home?.name||'Home'}</div>
-              <div class="coach">${m.home?.coach ? 'Coach: ' + m.home.coach : ''}</div>
-            </div>
-          </div>
-          <div class="score">${(m.home?.score||0)} — ${(m.away?.score||0)}</div>
-          <div class="team">
-            <div>
-              <div class="tname" style="text-align:right">${m.away?.name||'Away'}</div>
-              <div class="coach" style="text-align:right">${m.away?.coach? 'Coach: ' + m.away.coach:''}</div>
-            </div>
-            <img src="${m.away?.logoUrl || 'aog-logo.png'}" class="tlogo" alt="away">
-          </div>
-        </div>
-        <div style="display:flex;justify-content:space-between; margin-top:8px; align-items:center;">
-          <div class="meta">${m.status === 'live' ? '<strong style="color:'+getComputedStyle(document.documentElement).getPropertyValue('--gold')+'">LIVE</strong>' : (m.status || '') } • ${new Date(m.createdAt||'').toLocaleString()}</div>
-          <div class="events">${(m.events && m.events.length) ? (m.events.slice(0,3).map(e=>`${e.minute} ${e.type} ${e.team? ('('+ (e.team==='A'?m.home?.name:m.away?.name) +')') : ''} — '+e.desc).join(' • ') ) : 'No events yet'}</div>
-        </div>
-      `;
-      fixturesRoot.appendChild(el);
-    });
-  }
-
-  // real-time listen
-  listenMatches((matches)=>{
-    renderMatches(matches || []);
-  });
-
-</script>
-</body>
-</html>dates. Admin password stored only on this device.</div>
-    </footer>
-  </div>
 </div>
 
 <script>
-/* -------------------- State & Persistence -------------------- */
-const STORAGE_KEY = 'pfl_live_state_v2';
-const PASS_KEY = 'pfl_admin_pass_v2';
-let state = {
-  teamA: { name:'Team A', coach:'—', players:[], logo:'', score:0},
-  teamB: { name:'Team B', coach:'—', players:[], logo:'', score:0},
-  competitionLogo: '',
-  events: [],
-  matchStatus: 'Not started',
-  matchTime: "0'"
-};
+const DATA_URL = 'https://raw.githubusercontent.com/rowlandmayowa527-ai/pfl-livescore-center/main/data.json';
+let lastScores = {};
 
-function saveState(){ localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }
-function loadState(){ const s = localStorage.getItem(STORAGE_KEY); if(s) state = JSON.parse(s); }
-function clearAll(){ localStorage.removeItem(STORAGE_KEY); /* keep admin pass */ state = {
-  teamA: { name:'Team A', coach:'—', players:[], logo:'', score:0},
-  teamB: { name:'Team B', coach:'—', players:[], logo:'', score:0},
-  competitionLogo: '', events: [], matchStatus:'Not started', matchTime:"0'"}; saveState(); renderAll(); }
-
-/* -------------------- Elements -------------------- */
-const teamANameEl = document.getElementById('teamAName');
-const teamBNameEl = document.getElementById('teamBName');
-const teamALogoEl = document.getElementById('teamALogo');
-const teamBLogoEl = document.getElementById('teamBLogo');
-const scoreEl = document.getElementById('score');
-const teamACoachEl = document.getElementById('teamACoach');
-const teamBCoachEl = document.getElementById('teamBCoach');
-const teamAPlayersEl = document.getElementById('teamAPlayers');
-const teamBPlayersEl = document.getElementById('teamBPlayers');
-const eventFeed = document.getElementById('eventFeed');
-const matchStatusEl = document.getElementById('matchStatus');
-const matchTimeEl = document.getElementById('matchTime');
-const siteLogoEl = document.getElementById('siteLogo');
-
-/* admin elements */
-const loginBtn = document.getElementById('loginBtn');
-const adminPassInput = document.getElementById('adminPass');
-const toggleAdminBtn = document.getElementById('toggleAdminBtn');
-const adminArea = document.getElementById('adminArea');
-const setupSection = document.getElementById('setupSection');
-const teamANameInput = document.getElementById('teamANameInput');
-const teamBNameInput = document.getElementById('teamBNameInput');
-const teamACoachInput = document.getElementById('teamACoachInput');
-const teamBCoachInput = document.getElementById('teamBCoachInput');
-const teamAPlayersInput = document.getElementById('teamAPlayersInput');
-const teamBPlayersInput = document.getElementById('teamBPlayersInput');
-const teamALogoInput = document.getElementById('teamALogoInput');
-const teamBLogoInput = document.getElementById('teamBLogoInput');
-const siteLogoInput = document.getElementById('siteLogoInput');
-const siteLogoPreview = document.getElementById('siteLogoPreview');
-const saveSetup = document.getElementById('saveSetup');
-const clearStorageBtn = document.getElementById('clearStorage');
-const resetBtn = document.getElementById('resetBtn');
-
-/* quick events */
-const goalA = document.getElementById('goalA');
-const goalB = document.getElementById('goalB');
-const redA = document.getElementById('redA');
-const redB = document.getElementById('redB');
-const yellowA = document.getElementById('yellowA');
-const yellowB = document.getElementById('yellowB');
-const assistA = document.getElementById('assistA');
-const assistB = document.getElementById('assistB');
-const subA = document.getElementById('subA');
-const subB = document.getElementById('subB');
-
-const addEventBtn = document.getElementById('addEventBtn');
-const addSubBtn = document.getElementById('addSubBtn');
-const eventMinute = document.getElementById('eventMinute');
-const eventDesc = document.getElementById('eventDesc');
-
-let adminVisible = false;
-
-/* -------------------- Initialize -------------------- */
-(function init(){
-  // ensure admin password exists locally (set default to Rowland12# if none)
-  if(!localStorage.getItem(PASS_KEY)){ localStorage.setItem(PASS_KEY, 'Rowland12#'); }
-  loadState();
-  saveState();
-  renderAll();
-})();
-
-/* -------------------- Admin handling -------------------- */
-function getPass(){ return localStorage.getItem(PASS_KEY); }
-function checkPass(p){ return p === getPass(); }
-loginBtn.addEventListener('click', ()=>{
-  const p = adminPassInput.value.trim();
-  if(!p){ alert('Enter password.'); return; }
-  if(checkPass(p)){
-    adminPassInput.value = '';
-    setupSection.style.display = 'block';
-    alert('Admin unlocked (local only).');
-    populateInputsFromState();
-  } else {
-    alert('Wrong password.');
-  }
-});
-toggleAdminBtn.addEventListener('click', ()=>{
-  adminVisible = !adminVisible;
-  adminArea.classList.toggle('show', adminVisible);
-  if(!adminVisible) setupSection.style.display = 'none';
-});
-
-/* -------------------- File inputs -------------------- */
-function readFileAsDataURL(file, cb){
-  const r = new FileReader();
-  r.onload = e => cb(e.target.result);
-  r.readAsDataURL(file);
-}
-siteLogoInput.addEventListener('change', (e)=>{
-  const f = e.target.files[0]; if(!f) return;
-  readFileAsDataURL(f, (data)=>{ state.competitionLogo = data; siteLogoEl.src = data; siteLogoPreview.innerHTML = '<img src="'+data+'" style="width:64px;height:64px;border-radius:8px"/>'; saveState(); });
-});
-teamALogoInput.addEventListener('change',(e)=>{
-  const f = e.target.files[0]; if(!f) return;
-  readFileAsDataURL(f,(data)=>{ state.teamA.logo = data; renderAll(); saveState(); });
-});
-teamBLogoInput.addEventListener('change',(e)=>{
-  const f = e.target.files[0]; if(!f) return;
-  readFileAsDataURL(f,(data)=>{ state.teamB.logo = data; renderAll(); saveState(); });
-});
-
-/* -------------------- Setup save/clear -------------------- */
-saveSetup.addEventListener('click', ()=>{
-  state.teamA.name = teamANameInput.value.trim() || 'Team A';
-  state.teamA.coach = teamACoachInput.value.trim() || '—';
-  state.teamA.players = teamAPlayersInput.value.split('\n').map(s=>s.trim()).filter(Boolean);
-  state.teamB.name = teamBNameInput.value.trim() || 'Team B';
-  state.teamB.coach = teamBCoachInput.value.trim() || '—';
-  state.teamB.players = teamBPlayersInput.value.split('\n').map(s=>s.trim()).filter(Boolean);
-  saveState(); renderAll(); alert('Setup saved.');
-});
-clearStorageBtn.addEventListener('click', ()=>{ if(confirm('Clear all saved data on this device?')) clearAll(); });
-resetBtn.addEventListener('click', ()=>{ if(confirm('Reset scores and events for this match?')){ state.teamA.score=0; state.teamB.score=0; state.events=[]; state.matchStatus='Not started'; saveState(); renderAll(); } });
-
-/* -------------------- Events & actions -------------------- */
-function nowStamp(){ const d = new Date(); return d.getHours().toString().padStart(2,'0')+':'+d.getMinutes().toString().padStart(2,'0'); }
-function pushEvent(ev){ state.events.unshift(ev); saveState(); renderEvents(); }
-function flashTeam(side){ const el = side==='A'? teamANameEl : teamBNameEl; el.classList.remove('flash-red'); void el.offsetWidth; el.classList.add('flash-red'); }
-
-function addGoal(team){
-  if(team==='A'){ state.teamA.score++; pushEvent({type:'Goal', team:'A', minute: eventMinute.value.trim() || nowStamp(), desc: `${state.teamA.name} scored`}); flashTeam('A'); playGoalSound(); }
-  else { state.teamB.score++; pushEvent({type:'Goal', team:'B', minute: eventMinute.value.trim() || nowStamp(), desc: `${state.teamB.name} scored`}); flashTeam('B'); playGoalSound(); }
-  saveState(); renderAll();
-}
-function addCard(team, color){
-  pushEvent({type: color+' card', team, minute: eventMinute.value.trim() || nowStamp(), desc: `${team==='A'?state.teamA.name:state.teamB.name} — ${color} card`});
-  if(color==='Red') flashTeam(team);
-  saveState(); renderAll();
-}
-function addAssist(team){
-  pushEvent({type:'Assist', team, minute: eventMinute.value.trim() || nowStamp(), desc: `${team==='A'?state.teamA.name:state.teamB.name} — Assist`});
-  saveState(); renderEvents();
-}
-function addSub(team){
-  const desc = prompt('Substitution (Out: Player — In: Player)');
-  if(!desc) return;
-  pushEvent({type:'Substitution', team, minute: eventMinute.value.trim() || nowStamp(), desc});
-  saveState(); renderAll();
-}
-function addManual(){
-  const minute = eventMinute.value.trim() || nowStamp();
-  const desc = eventDesc.value.trim();
-  if(!desc){ alert('Enter description'); return; }
-  pushEvent({type:'Event', team:'', minute, desc});
-  eventDesc.value=''; eventMinute.value='';
+async function loadData(){
+  const res = await fetch(DATA_URL + `?t=${Date.now()}`);
+  const data = await res.json();
+  updatePlayoffsFromLeague(data);
+  renderLiveMatches(data);
+  renderNextFixtures(data);
+  renderLeagueTable(data);
+  renderPlayoffs(data);
 }
 
-/* Quick button listeners */
-goalA.addEventListener('click', ()=>addGoal('A'));
-goalB.addEventListener('click', ()=>addGoal('B'));
-redA.addEventListener('click', ()=>addCard('A','Red'));
-redB.addEventListener('click', ()=>addCard('B','Red'));
-yellowA.addEventListener('click', ()=>addCard('A','Yellow'));
-yellowB.addEventListener('click', ()=>addCard('B','Yellow'));
-assistA.addEventListener('click', ()=>addAssist('A'));
-assistB.addEventListener('click', ()=>addAssist('B'));
-subA.addEventListener('click', ()=>addSub('A'));
-subB.addEventListener('click', ()=>addSub('B'));
-addEventBtn.addEventListener('click', addManual);
-addSubBtn.addEventListener('click', ()=>{ const desc = prompt('Substitution (Out: Player — In: Player)'); if(desc) { pushEvent({type:'Substitution', team:'', minute: eventMinute.value.trim() || nowStamp(), desc}); saveState(); renderAll(); } });
+function renderLiveMatches(data){
+  const liveContainer = document.getElementById("liveMatches");
+  liveContainer.innerHTML="";
+  data.matchDays.forEach(day=>{
+    day.matches.filter(m=>m.live).forEach(m=>{
+      const card = document.createElement("div");
+      card.className="card live";
+      card.innerHTML=`
+        <div class="match-row">
+          <div class="team">${m.home}</div>
+          <div class="score">${m.homeScore} - ${m.awayScore}</div>
+          <div class="team">${m.away}</div>
+        </div>
+        <div style="margin-top:5px;">${m.venue} | ${m.time}</div>
+      `;
+      liveContainer.appendChild(card);
 
-/* -------------------- Rendering -------------------- */
-function renderAll(){
-  teamANameEl.textContent = state.teamA.name;
-  teamBNameEl.textContent = state.teamB.name;
-  teamACoachEl.textContent = 'Coach: ' + (state.teamA.coach || '—');
-  teamBCoachEl.textContent = 'Coach: ' + (state.teamB.coach || '—');
-  teamAPlayersEl.textContent = (state.teamA.players||[]).slice(0,5).join(', ') || '—';
-  teamBPlayersEl.textContent = (state.teamB.players||[]).slice(0,5).join(', ') || '—';
-  scoreEl.textContent = `${state.teamA.score} — ${state.teamB.score}`;
-  matchStatusEl.textContent = state.matchStatus || 'Not started';
-  matchTimeEl.textContent = state.matchTime || "0'";
-  siteLogoEl.src = state.competitionLogo || '';
-  teamALogoEl.src = state.teamA.logo || '';
-  teamBLogoEl.src = state.teamB.logo || '';
-  renderEvents();
-}
-function renderEvents(){
-  eventFeed.innerHTML = '';
-  if(!state.events.length){ eventFeed.innerHTML = '<div class="muted">No events yet.</div>'; return; }
-  state.events.forEach(ev=>{
-    const div = document.createElement('div'); div.className='ev';
-    const teamName = ev.team==='A'? state.teamA.name : ev.team==='B'? state.teamB.name : '';
-    div.innerHTML = `<div style="display:flex; justify-content:space-between; gap:8px;"><div><strong>${ev.type}</strong>${teamName? ' — ' + teamName : ''}</div><div class="muted">${ev.minute}</div></div>
-      <div style="margin-top:6px;">${ev.desc}</div>`;
-    eventFeed.appendChild(div);
+      // Goal flash & sound
+      const prev = lastScores[m.id] || {home:0, away:0};
+      if(m.homeScore>prev.home || m.awayScore>prev.away){
+        card.classList.add("flash");
+        document.getElementById("goalSound").play().catch(()=>{});
+        setTimeout(()=>card.classList.remove("flash"),500);
+      }
+      lastScores[m.id]={home:m.homeScore,away:m.awayScore};
+    });
   });
 }
 
-/* -------------------- Sound -------------------- */
-let audioCtx = null;
-function playGoalSound(){
-  try{
-    if(!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    const ctx = audioCtx; const t = ctx.currentTime;
-    const freqs = [523.25,659.25,783.99];
-    freqs.forEach((f,i)=>{
-      const o = ctx.createOscillator();
-      const g = ctx.createGain();
-      o.type='sine'; o.frequency.value=f;
-      g.gain.value=0.0001;
-      o.connect(g); g.connect(ctx.destination);
-      o.start(t + i*0.03);
-      g.gain.setValueAtTime(0.0001, t + i*0.03);
-      g.gain.exponentialRampToValueAtTime(0.08, t + 0.03 + i*0.03);
-      g.gain.exponentialRampToValueAtTime(0.0001, t + 0.62 + i*0.03);
-      o.stop(t + 0.62 + i*0.03);
+function renderNextFixtures(data){
+  const nextContainer = document.getElementById("nextFixtures");
+  nextContainer.innerHTML="";
+  data.matchDays.forEach(day=>{
+    day.matches.filter(m=>!m.live).forEach(m=>{
+      const card = document.createElement("div");
+      card.className="card";
+      card.innerHTML=`
+        <div class="match-row">
+          <div class="team">${m.home}</div>
+          <div class="score">vs</div>
+          <div class="team">${m.away}</div>
+        </div>
+        <div style="margin-top:5px;">${m.venue} | ${m.time}</div>
+      `;
+      nextContainer.appendChild(card);
     });
-  }catch(e){ console.warn('Audio failed', e); }
+  });
 }
 
-/* -------------------- Helpers -------------------- */
-function populateInputsFromState(){
-  teamANameInput.value = state.teamA.name || '';
-  teamBNameInput.value = state.teamB.name || '';
-  teamACoachInput.value = state.teamA.coach || '';
-  teamBCoachInput.value = state.teamB.coach || '';
-  teamAPlayersInput.value = (state.teamA.players||[]).join('\n');
-  teamBPlayersInput.value = (state.teamB.players||[]).join('\n');
-  siteLogoPreview.innerHTML = state.competitionLogo? '<img src="'+state.competitionLogo+'" style="width:64px;height:64px;border-radius:8px"/>':'Preview';
+function renderLeagueTable(data){
+  const tbody=document.querySelector("#leagueTable tbody");
+  tbody.innerHTML="";
+  const table = {};
+  data.teams.forEach(t=>table[t]={MP:0,W:0,D:0,L:0,GF:0,GA:0,GD:0,Pts:0});
+
+  data.matchDays.forEach(day=>{
+    day.matches.forEach(m=>{
+      if(m.homeScore==null||m.awayScore==null) return;
+      table[m.home].MP++; table[m.away].MP++;
+      table[m.home].GF += m.homeScore; table[m.home].GA += m.awayScore;
+      table[m.away].GF += m.awayScore; table[m.away].GA += m.homeScore;
+      table[m.home].GD = table[m.home].GF - table[m.home].GA;
+      table[m.away].GD = table[m.away].GF - table[m.away].GA;
+      if(m.homeScore>m.awayScore){ table[m.home].W++; table[m.home].Pts+=3; table[m.away].L++; }
+      else if(m.homeScore<m.awayScore){ table[m.away].W++; table[m.away].Pts+=3; table[m.home].L++; }
+      else { table[m.home].D++; table[m.away].D++; table[m.home].Pts+=1; table[m.away].Pts+=1; }
+    });
+  });
+
+  const sorted = Object.entries(table).sort((a,b)=>b[1].Pts - a[1].Pts || b[1].GD - a[1].GD || b[1].GF - a[1].GF);
+  sorted.forEach(([team, stats])=>{
+    const row=document.createElement("tr");
+    row.innerHTML=`<td>${team}</td><td>${stats.MP}</td><td>${stats.W}</td><td>${stats.D}</td><td>${stats.L}</td><td>${stats.GF}</td><td>${stats.GA}</td><td>${stats.GD}</td><td>${stats.Pts}</td>`;
+    tbody.appendChild(row);
+  });
 }
 
-/* allow quick save on Enter for manual event */
-eventDesc.addEventListener('keyup', (e)=>{ if(e.key==='Enter') addManual(); });
+function updatePlayoffsFromLeague(data){
+  if(data.phase!=="League") return;
 
-/* expose small CSV export for events */
-window.exportEventsCSV = function(){
-  if(!state.events.length){ alert('No events'); return; }
-  const rows = [['Time','Type','Team','Desc']];
-  state.events.slice().reverse().forEach(ev=> rows.push([ev.minute,ev.type,ev.team,ev.desc]));
-  const csv = rows.map(r=> r.map(c=>'"'+String(c).replace(/"/g,'""')+'"').join(',')).join('\n');
-  const url = URL.createObjectURL(new Blob([csv],{type:'text/csv'}));
-  const a = document.createElement('a'); a.href=url; a.download='pfl_events.csv'; a.click();
-  URL.revokeObjectURL(url);
-};
+  // Calculate top 4
+  const table = {};
+  data.teams.forEach(t=>table[t]={Pts:0,GD:0,GF:0,GA:0});
+  data.matchDays.forEach(day=>{
+    day.matches.forEach(m=>{
+      if(m.homeScore==null||m.awayScore==null) return;
+      table[m.home].GF += m.homeScore; table[m.home].GA += m.awayScore;
+      table[m.away].GF += m.awayScore; table[m.away].GA += m.homeScore;
+      table[m.home].GD = table[m.home].GF - table[m.home].GA;
+      table[m.away].GD = table[m.away].GF - table[m.away].GA;
+      if(m.homeScore>m.awayScore) table[m.home].Pts+=3;
+      else if(m.homeScore<m.awayScore) table[m.away].Pts+=3;
+      else { table[m.home].Pts+=1; table[m.away].Pts+=1; }
+    });
+  });
+
+  const sorted = Object.entries(table).sort((a,b)=>b[1].Pts - a[1].Pts || b[1].GD - a[1].GD || b[1].GF - a[1].GF);
+  const top4 = sorted.slice(0,4).map(t=>t[0]);
+
+  // Semi-finals
+  data.semiFinals = [
+    {id:1, home: top4[0], away: top4[2], venue:"Mainbowl", time:"14:00", homeScore:0, awayScore:0, live:false},
+    {id:2, home: top4[1], away: top4[3], venue:"Maracana", time:"16:00", homeScore:0, awayScore:0, live:false}
+  ];
+
+  // Finals & Third-place if semi-finals played
+  const semi = data.semiFinals;
+  if(semi.every(m=>m.homeScore!=null && m.awayScore!=null)){
+    const winners = [];
+    const losers = [];
+    semi.forEach(m=>{
+      if(m.homeScore>m.awayScore){ winners.push(m.home); losers.push(m.away); }
+      else if(m.homeScore<m.awayScore){ winners.push(m.away); losers.push(m.home); }
+      else { winners.push(m.home); losers.push(m.away); }
+    });
+
+    data.finals = [
+      {id:1, home:winners[0], away:winners[1], venue:"Mainbowl", time:"18:00", homeScore:0, awayScore:0, live:false}
+    ];
+
+    data.thirdPlace = [
+      {id:1, home:losers[0], away:losers[1], venue:"Maracana", time:"18:00", homeScore:0, awayScore:0, live:false}
+    ];
+  }
+}
+
+function renderPlayoffs(data){
+  const container = document.getElementById("playoffs");
+  container.innerHTML="";
+  const phases=["semiFinals","finals","thirdPlace"];
+  phases.forEach(p=>{
+    if(data[p] && data[p].length>0){
+      const phaseDiv = document.createElement("div");
+      phaseDiv.innerHTML=`<h3>${p}</h3>`;
+      data[p].forEach(m=>{
+        const card=document.createElement("div");
+        card.className="card";
+        card.innerHTML=`
+          <div class="match-row">
+            <div class="team">${m.home}</div>
+            <div class="score">${m.homeScore} - ${m.awayScore}</div>
+            <div class="team">${m.away}</div>
+          </div>
+          <div style="margin-top:5px;">${m.venue} | ${m.time}</div>
+        `;
+        phaseDiv.appendChild(card);
+      });
+      container.appendChild(phaseDiv);
+    }
+  });
+}
+
+loadData();
+setInterval(loadData,10000);
 </script>
 </body>
 </html>
