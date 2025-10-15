@@ -1,19 +1,18 @@
 {
-  "meta": {
-    "competition": "Pinnacle Football League",
-    "organiser": "Arcane Override Games",
-    "updatedAt": "2025-10-20T00:00:00Z",
-    "theme": "gold-black-white"
-  },
-  "live": null,
-  "fixtures": [
-    {"id":"r1m1","date":"2025-10-28","time":"14:00","home":"Blue Blazzers","away":"Dark Art FC","venue":"Mainbowl","status":"upcoming","homeScore":0,"awayScore":0},
-    {"id":"r1m2","date":"2025-10-28","time":"15:00","home":"Infinity FC","away":"Dynamos FC","venue":"Mainbowl","status":"upcoming","homeScore":0,"awayScore":0},
-    {"id":"r1m3","date":"2025-10-28","time":"16:00","home":"Shooting Stars","away":"FET 21/26","venue":"Mainbowl","status":"upcoming","homeScore":0,"awayScore":0},
-    {"id":"r1m4","date":"2025-10-28","time":"17:00","home":"Courage FC","away":"TBD","venue":"Mainbowl","status":"upcoming","homeScore":0,"awayScore":0}
+  "phase": "League",
+  "teams": ["Blue Blazzers","Dark Art FC","Shooting Stars","Infinity FC","Courage FC","Dynamos FC","FET 21/26","TBD"],
+  "matchDays": [
+    {
+      "day": 1,
+      "matches": [
+        {"id":1, "home":"Blue Blazzers", "away":"Dark Art FC", "venue":"Mainbowl", "time":"14:00", "homeScore":0, "awayScore":0, "live":false},
+        {"id":2, "home":"Infinity FC", "away":"Dynamos FC", "venue":"Mainbowl", "time":"15:00", "homeScore":0, "awayScore":0, "live":false},
+        {"id":3, "home":"Shooting Stars", "away":"FET 21/26", "venue":"Mainbowl", "time":"16:00", "homeScore":0, "awayScore":0, "live":false},
+        {"id":4, "home":"Courage FC", "away":"TBD", "venue":"Mainbowl", "time":"17:00", "homeScore":0, "awayScore":0, "live":false}
+      ]
+    }
   ],
-  "archive": [],
-  "predictions": [],
-  "comments": [],
-  "players": {}
+  "semiFinals": [],
+  "finals": [],
+  "thirdPlace": []
 }
