@@ -1,200 +1,120 @@
+<!-- index.html -->
 <!doctype html>
 <html lang="en">
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>PFL LiveScore Center — Horizontal</title>
+<title>PFL LiveScore Center</title>
+<meta name="description" content="Pinnacle Football League - Live scores and results. Powered by Arcane Override Games." />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;600;800&display=swap">
 <style>
-  :root{
-    --bg:#071126;
-    --card:#0b1724;
-    --accent:#e11d48;
-    --muted:#9aa4b2;
-    --white:#eef2f7;
-    --ok:#22c55e;
-    --warn:#f59e0b;
-  }
-  *{box-sizing:border-box}
-  body{ margin:0; font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial; background:linear-gradient(180deg,#031022 0%, #071726 100%); color:var(--white); -webkit-font-smoothing:antialiased;}
-  header{ display:flex; align-items:center; gap:12px; padding:12px 16px; border-bottom:1px solid rgba(255,255,255,0.03);}
-  header img.logo{ width:48px; height:48px; object-fit:cover; border-radius:8px; border:1px solid rgba(255,255,255,0.04);}
-  header h1{ font-size:18px; margin:0; }
-  header .sub{ color:var(--muted); font-size:13px; margin-top:4px;}
-  .wrap{ max-width:1100px; margin:12px auto; padding:12px; display:grid; gap:12px; grid-template-columns: 2fr 1fr; }
-  .card{ background:var(--card); padding:12px; border-radius:12px; box-shadow: 0 6px 18px rgba(6,8,15,0.6); border:1px solid rgba(255,255,255,0.03);}
-  /* Horizontal scoreboard */
-  .scoreboard{ display:flex; gap:16px; align-items:center; justify-content:space-between; flex-wrap:wrap;}
-  .team-block{ display:flex; flex-direction:column; align-items:center; gap:8px; min-width:220px; }
-  .team-top{ display:flex; gap:10px; align-items:center; }
-  .tlogo{ width:84px; height:84px; border-radius:10px; object-fit:cover; border:1px solid rgba(255,255,255,0.04); background:rgba(255,255,255,0.02); }
-  .tname{ font-size:18px; font-weight:700; transition: color .25s ease; text-align:center; min-width:120px;}
-  .coach{ font-size:13px; color:var(--muted); margin-top:2px;}
-  .scorebox{ display:flex; flex-direction:column; align-items:center; gap:6px; min-width:140px; }
-  .scorebig{ font-size:54px; font-weight:900;}
-  .vs{ font-size:13px; color:var(--muted);}
-  .meta{ display:flex; gap:12px; align-items:center; color:var(--muted); font-size:13px;}
-  .events{ margin-top:12px;}
-  .feed{ max-height:420px; overflow:auto; padding:8px; border-radius:8px; background:linear-gradient(180deg, rgba(255,255,255,0.01), rgba(255,255,255,0.02)); }
-  .ev{ padding:8px; border-bottom:1px dashed rgba(255,255,255,0.02); font-size:14px; }
-  .muted{ color:var(--muted); }
-  .admin-panel{ display:none; gap:8px; margin-top:8px; }
-  .admin-panel.show{ display:block; }
-  label{ display:block; font-size:13px; margin-bottom:6px; color:var(--muted);}
-  input[type="text"], input[type="password"], textarea{ width:100%; padding:8px; border-radius:8px; border:1px solid rgba(255,255,255,0.04); background:transparent; color:var(--white); outline:none; }
-  button{ background:transparent; color:var(--white); border:1px solid rgba(255,255,255,0.04); padding:8px 12px; border-radius:8px; font-weight:700; cursor:pointer; }
-  button.primary{ background:linear-gradient(90deg,var(--accent),#ff6b6b); border:0; color:white; }
-  .row{ display:flex; gap:8px; flex-wrap:wrap; }
-  .small{ font-size:13px; padding:6px 8px; border-radius:6px;}
-  .flash-red{ animation: flashRed 1s ease; }
-  @keyframes flashRed{
-    0%{ color:var(--white); text-shadow: none; transform:scale(1); }
-    30%{ color:var(--accent); text-shadow:0 0 22px rgba(225,29,72,0.35); transform:scale(1.04); }
-    100%{ color:var(--white); text-shadow: none; transform:scale(1); }
-  }
-  .logo-placeholder{ width:84px; height:84px; background:rgba(255,255,255,0.02); display:flex; align-items:center; justify-content:center; color:var(--muted); border-radius:10px; }
-  footer{ text-align:center; color:var(--muted); font-size:13px; margin-top:10px;}
-  @media(max-width:900px){
-    .wrap{ grid-template-columns: 1fr; }
-    .team-top{ flex-direction:column; align-items:center;}
-    .team-block{ min-width:100%; }
-    .scorebig{ font-size:44px; }
-  }
+  :root{ --bg:#080706; --card:#0c0c0c; --gold:#d4af37; --muted:#bfc6cc; --white:#fff; --accent:#d4af37; }
+  body{ margin:0; font-family:Inter,system-ui,Arial; background:linear-gradient(180deg,#050505 0%,#0a0a0a 100%); color:var(--white); }
+  header{ display:flex; gap:12px; align-items:center; padding:12px 16px; border-bottom:1px solid rgba(255,255,255,0.04); }
+  header img.logo{ width:56px; height:56px; object-fit:cover; border-radius:8px; }
+  header .title{ font-weight:800; font-size:18px; }
+  header .subtitle{ color:var(--muted); font-size:13px; }
+  .wrap{ max-width:1100px; margin:12px auto; padding:12px; display:grid; gap:12px; grid-template-columns: 1fr; }
+  .controls{ display:flex; justify-content:space-between; align-items:center; gap:8px; margin-bottom:6px; }
+  .card{ background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01)); padding:12px; border-radius:12px; border:1px solid rgba(255,255,255,0.03); }
+  .fixture-list{ display:flex; flex-direction:column; gap:10px; }
+  .match{ display:flex; gap:12px; align-items:center; justify-content:space-between; padding:10px; border-radius:10px; }
+  .match.live{ box-shadow: 0 8px 30px rgba(212,175,55,0.12); border:1px solid rgba(212,175,55,0.15); }
+  .team{ display:flex; gap:12px; align-items:center; min-width:240px; }
+  .tlogo{ width:56px; height:56px; border-radius:8px; object-fit:cover; background:#0b0b0b; border:1px solid rgba(255,255,255,0.03); }
+  .tname{ font-weight:700; color:var(--white); font-size:16px; }
+  .coach{ color:var(--muted); font-size:12px; }
+  .score{ font-weight:900; font-size:28px; min-width:110px; text-align:center; }
+  .meta{ color:var(--muted); font-size:13px; }
+  .events{ color:var(--muted); font-size:13px; }
+  footer{ text-align:center; padding:10px; color:var(--muted); font-size:13px; }
+  @media(max-width:720px){ .team .tname{ font-size:14px } .score{ font-size:22px } }
 </style>
 </head>
 <body>
 <header>
-  <img id="siteLogo" class="logo" src="" alt="PFL logo" />
+  <img id="pflRepoLogo" class="logo" src="pfl-logo.png" alt="PFL logo">
   <div>
-    <h1>Pinnacle Football League (PFL)</h1>
-    <div class="sub">Powered by Arcane Override Games (AOG) — Live Score Center</div>
+    <div class="title">Pinnacle Football League — LiveScore</div>
+    <div class="subtitle">Powered by Arcane Override Games (AOG)</div>
   </div>
+  <div style="margin-left:auto;"><img id="aogRepoLogo" class="logo" src="aog-logo.png" alt="AOG logo" style="width:48px;height:48px;"></div>
 </header>
 
-<div class="wrap">
-  <!-- Left: scoreboard & events -->
+<main class="wrap">
   <div class="card">
-    <div class="scoreboard">
-      <div class="team-block" id="leftTeam">
-        <div class="team-top">
-          <img id="teamALogo" class="tlogo" src="" alt="Team A Logo">
-          <div style="display:flex; flex-direction:column; align-items:flex-start;">
-            <div id="teamAName" class="tname">Team A</div>
-            <div id="teamACoach" class="coach">Coach: —</div>
-            <div class="muted" style="font-size:13px; margin-top:6px;">Players: <span id="teamAPlayers">—</span></div>
-          </div>
-        </div>
-      </div>
-
-      <div class="scorebox">
-        <div class="scorebig" id="score">0 — 0</div>
-        <div class="vs">LIVE</div>
-        <div class="meta"><div>Match clock: <span id="matchTime">0'</span></div><div>Status: <span id="matchStatus">Not started</span></div></div>
-        <div style="display:flex; gap:8px; margin-top:8px;">
-          <button id="resetBtn" class="small">Reset Match</button>
-          <button id="toggleAdminBtn" class="primary small">Admin</button>
-        </div>
-      </div>
-
-      <div class="team-block" id="rightTeam">
-        <div class="team-top">
-          <div style="display:flex; flex-direction:column; align-items:flex-end;">
-            <div id="teamBName" class="tname">Team B</div>
-            <div id="teamBCoach" class="coach">Coach: —</div>
-            <div class="muted" style="font-size:13px; margin-top:6px;">Players: <span id="teamBPlayers">—</span></div>
-          </div>
-          <img id="teamBLogo" class="tlogo" src="" alt="Team B Logo">
-        </div>
-      </div>
+    <div class="controls">
+      <div class="meta">Live matches are highlighted. Past results remain accessible.</div>
+      <div><a href="admin.html" style="color:var(--gold); font-weight:700; text-decoration:none;">Admin panel</a></div>
     </div>
 
-    <div class="events">
-      <h3 style="margin:10px 0 6px 0;">Live Events</h3>
-      <div class="feed" id="eventFeed"><div class="muted">No events yet.</div></div>
+    <div class="fixture-list card" id="fixturesRoot">
+      <!-- matches inserted here -->
+      <div class="muted">Loading matches…</div>
     </div>
   </div>
+</main>
 
-  <!-- Right: admin -->
-  <div class="card">
-    <div style="display:flex; justify-content:space-between; align-items:center;">
-      <div class="muted">Admin actions</div>
-      <div class="muted" style="font-size:12px;">Data stored on this device</div>
-    </div>
+<footer>© <strong>Arcane Override Games</strong> — Pinnacle Football League</footer>
 
-    <div id="adminArea" class="admin-panel">
-      <label>Admin password (local). First time password is set to <strong>Rowland12#</strong> automatically if not changed.</label>
-      <div class="row" style="margin-bottom:6px;">
-        <input id="adminPass" type="password" placeholder="Enter admin password" />
-        <button id="loginBtn" class="small">Login</button>
-      </div>
+<script type="module">
+  import { listenMatches } from './firebase.js';
 
-      <div id="setupSection" style="display:none;">
-        <label>Competition Logo (optional)</label>
-        <div style="display:flex; gap:8px; align-items:center; margin-bottom:8px;">
-          <input id="siteLogoInput" type="file" accept="image/*" />
-          <div id="siteLogoPreview" class="logo-placeholder">Preview</div>
-        </div>
+  const fixturesRoot = document.getElementById('fixturesRoot');
+  const pflRepoLogo = document.getElementById('pflRepoLogo');
+  const aogRepoLogo = document.getElementById('aogRepoLogo');
 
-        <label>Team A name</label>
-        <input id="teamANameInput" type="text" placeholder="Team A name" />
-        <label>Team A Coach</label>
-        <input id="teamACoachInput" type="text" placeholder="Coach name" />
-        <label>Team A Players (one per line)</label>
-        <textarea id="teamAPlayersInput" rows="4" placeholder="Player1&#10;Player2"></textarea>
-        <label>Team A Logo</label>
-        <input id="teamALogoInput" type="file" accept="image/*" />
+  // If you uploaded repo logos named exactly pfl-logo.png / aog-logo.png they'll show.
+  // Admin uploads replace per-match logos stored in DB.
 
-        <hr style="border:0; border-top:1px solid rgba(255,255,255,0.03); margin:8px 0;">
+  function renderMatches(matches){
+    if(!matches.length){ fixturesRoot.innerHTML = '<div class="muted">No matches yet.</div>'; return; }
+    // Sort: live first, then newest createdAt desc
+    matches.sort((a,b)=>{
+      if(a.status === 'live' && b.status !== 'live') return -1;
+      if(b.status === 'live' && a.status !== 'live') return 1;
+      return (b.createdAt||'').localeCompare(a.createdAt||'');
+    });
 
-        <label>Team B name</label>
-        <input id="teamBNameInput" type="text" placeholder="Team B name" />
-        <label>Team B Coach</label>
-        <input id="teamBCoachInput" type="text" placeholder="Coach name" />
-        <label>Team B Players (one per line)</label>
-        <textarea id="teamBPlayersInput" rows="4" placeholder="Player1&#10;Player2"></textarea>
-        <label>Team B Logo</label>
-        <input id="teamBLogoInput" type="file" accept="image/*" />
-
-        <div style="display:flex; gap:8px; margin-top:10px;">
-          <button id="saveSetup" class="primary">Save Setup</button>
-          <button id="clearStorage" class="small">Clear All</button>
-        </div>
-
-        <hr style="border:0; border-top:1px solid rgba(255,255,255,0.03); margin:8px 0;">
-
-        <h4 style="margin:6px 0;">Quick Events</h4>
-        <div style="display:flex; flex-direction:column; gap:8px;">
-          <div class="row">
-            <button id="goalA" class="primary">⚽ Goal — Team A</button>
-            <button id="assistA" class="small">🅰️ Assist A</button>
-            <button id="yellowA" class="small">🟨 Yellow A</button>
-            <button id="redA" class="small">🟥 Red A</button>
-            <button id="subA" class="small">🔁 Sub A</button>
+    fixturesRoot.innerHTML = '';
+    matches.forEach(m=>{
+      const el = document.createElement('div');
+      el.className = 'match' + (m.status==='live' ? ' live' : '');
+      el.innerHTML = `
+        <div style="display:flex;gap:12px;align-items:center;">
+          <div class="team">
+            <img src="${m.home?.logoUrl || 'pfl-logo.png'}" class="tlogo" alt="home">
+            <div>
+              <div class="tname">${m.home?.name||'Home'}</div>
+              <div class="coach">${m.home?.coach ? 'Coach: ' + m.home.coach : ''}</div>
+            </div>
           </div>
-          <div class="row">
-            <button id="goalB" class="primary">⚽ Goal — Team B</button>
-            <button id="assistB" class="small">🅰️ Assist B</button>
-            <button id="yellowB" class="small">🟨 Yellow B</button>
-            <button id="redB" class="small">🟥 Red B</button>
-            <button id="subB" class="small">🔁 Sub B</button>
+          <div class="score">${(m.home?.score||0)} — ${(m.away?.score||0)}</div>
+          <div class="team">
+            <div>
+              <div class="tname" style="text-align:right">${m.away?.name||'Away'}</div>
+              <div class="coach" style="text-align:right">${m.away?.coach? 'Coach: ' + m.away.coach:''}</div>
+            </div>
+            <img src="${m.away?.logoUrl || 'aog-logo.png'}" class="tlogo" alt="away">
           </div>
         </div>
-
-        <hr style="border:0; border-top:1px solid rgba(255,255,255,0.03); margin:8px 0;">
-
-        <h4 style="margin:6px 0;">Manual Event</h4>
-        <label>Event minute (e.g. 23 or 45+2)</label>
-        <input id="eventMinute" type="text" placeholder="e.g. 23" />
-        <label>Event description (e.g. Goal — Player Name)</label>
-        <input id="eventDesc" type="text" placeholder="Describe event" />
-        <div style="display:flex; gap:8px; margin-top:8px;">
-          <button id="addEventBtn" class="primary">Add Event</button>
-          <button id="addSubBtn" class="small">Add Sub</button>
+        <div style="display:flex;justify-content:space-between; margin-top:8px; align-items:center;">
+          <div class="meta">${m.status === 'live' ? '<strong style="color:'+getComputedStyle(document.documentElement).getPropertyValue('--gold')+'">LIVE</strong>' : (m.status || '') } • ${new Date(m.createdAt||'').toLocaleString()}</div>
+          <div class="events">${(m.events && m.events.length) ? (m.events.slice(0,3).map(e=>`${e.minute} ${e.type} ${e.team? ('('+ (e.team==='A'?m.home?.name:m.away?.name) +')') : ''} — '+e.desc).join(' • ') ) : 'No events yet'}</div>
         </div>
-      </div>
-    </div>
+      `;
+      fixturesRoot.appendChild(el);
+    });
+  }
 
-    <footer style="margin-top:10px;">
-      <div class="muted">Tip: Use Quick Events during matches for fastest updates. Admin password stored only on this device.</div>
+  // real-time listen
+  listenMatches((matches)=>{
+    renderMatches(matches || []);
+  });
+
+</script>
+</body>
+</html>dates. Admin password stored only on this device.</div>
     </footer>
   </div>
 </div>
