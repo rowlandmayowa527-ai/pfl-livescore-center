@@ -1,40 +1,36 @@
-<!doctype html>
-<html lang="en">
-<head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>PFL Admin — Publish to GitHub (optional)</title>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;600;800&display=swap" rel="stylesheet">
-<style>
-  :root{ --bg:#060606; --card:#0b0b0b; --gold:#d4af37; --muted:#bfc6cc; --white:#fff; }
-  *{box-sizing:border-box}
-  body{ margin:0; font-family:Inter,system-ui,Arial; background:var(--bg); color:var(--white); }
-  header{ padding:14px; border-bottom:1px solid rgba(255,255,255,0.03); display:flex; align-items:center; justify-content:space-between;}
-  header h1{ margin:0; color:var(--gold); font-size:18px; }
-  .wrap{ max-width:1100px; margin:12px auto; padding:12px; display:grid; gap:12px; }
-  .card{ background:linear-gradient(180deg, rgba(255,255,255,0.01), rgba(255,255,255,0.02)); padding:12px; border-radius:12px; border:1px solid rgba(255,255,255,0.03); }
-  label{ display:block; color:var(--muted); margin-top:8px; font-size:13px; }
-  input, select, textarea { width:100%; padding:8px; border-radius:8px; background:transparent; color:var(--white); border:1px solid rgba(255,255,255,0.04); }
-  .row{ display:flex; gap:8px; flex-wrap:wrap; margin-top:8px; }
-  .col{ flex:1; min-width:120px; }
-  button{ padding:8px 12px; border-radius:8px; border:0; cursor:pointer; font-weight:800; }
-  .btnGold{ background:linear-gradient(90deg,var(--gold),#ffd87a); color:#111; }
-  .btnGhost{ background:transparent; color:var(--white); border:1px solid rgba(255,255,255,0.04); }
-  .small{ color:var(--muted); font-size:13px; }
-  pre{ background:#0a0a0a; padding:10px; overflow:auto; max-height:260px; color:var(--muted); }
-</style>
-</head>
-<body>
-<header>
-  <div>
-    <h1>Pinnacle Football League — Admin</h1>
-    <div class="small">Arcane Override Games</div>
-  </div>
-  <div>
-    <button class="btnGhost" id="btnUnlock">Unlock (password)</button>
-  </div>
-</header>
+<script type="module">
+import { GITHUB_USERNAME, REPO_NAME, FILE_PATH, BRANCH, TOKEN } from './config.js';
 
+async function updateDataJson(newData) {
+    // Get the current file SHA (needed to update)
+    const res = await fetch(`https://api.github.com/repos/${GITHUB_USERNAME}/${REPO_NAME}/contents/${FILE_PATH}?ref=${BRANCH}`, {
+        headers: { Authorization: `token ${TOKEN}` }
+    });
+    const fileData = await res.json();
+    const sha = fileData.sha;
+
+    // Encode the new data
+    const content = btoa(JSON.stringify(newData, null, 2));
+
+    // Push the update
+    const updateRes = await fetch(`https://api.github.com/repos/${GITHUB_USERNAME}/${REPO_NAME}/contents/${FILE_PATH}`, {
+        method: "PUT",
+        headers: {
+            "Authorization": `token ${TOKEN}`,
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+            message: "Update PFL live scores",
+            content: content,
+            sha: sha,
+            branch: BRANCH
+        })
+    });
+
+    const result = await updateRes.json();
+    console.log("Update result:", result);
+}
+</script>
 <div class="wrap">
 
   <div class="card">
