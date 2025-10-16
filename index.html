@@ -5,127 +5,219 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>PFL Live Scores</title>
 <style>
-body { font-family: Arial,sans-serif; margin:0; background:#111; color:#fff;}
-header { background:gold; color:black; text-align:center; padding:15px; font-weight:bold; }
-.container { max-width:1200px; margin:auto; padding:10px;}
-.card { background:#222; border:1px solid gold; border-radius:8px; padding:10px; margin-bottom:10px;}
-h2 {margin-top:20px;}
-table {width:100%; border-collapse:collapse; margin-bottom:20px;}
-th, td {border:1px solid gold; padding:5px; text-align:center;}
-.live {color:red; font-weight:bold;}
+body { margin:0; font-family: Arial, sans-serif; background: linear-gradient(#111,#222); color:#fff;}
+header {background: gold; color:black; text-align:center; font-weight:bold; font-size:1.6em; padding:15px;}
+.container {padding:10px; max-width:1200px; margin:auto;}
+.card {background:#111; border:1px solid gold; border-radius:8px; padding:10px; margin-bottom:15px;}
+.card.live {border-top:4px solid red;}
+.card h3 {margin:0 0 10px 0; font-size:1.2em;}
+.match-row {display:flex; justify-content:space-between; align-items:center; padding:5px 0;}
+.team {font-weight:bold;}
+.score {font-size:1.4em;}
+.flash {animation: flash 0.5s;}
+@keyframes flash {0%{background-color:red;}100%{background-color:inherit;}}
+table {width:100%; border-collapse: collapse; margin-top:20px;}
+th,td {border:1px solid gold; padding:8px; text-align:center;}
+th {background:gold; color:black;}
+@media(max-width:600px){
+  .match-row {flex-direction: column; align-items:flex-start;}
+  .score {margin-top:5px;}
+}
 </style>
 </head>
 <body>
 <header>Pinnacle Football League - Live Scores</header>
 <div class="container">
-  <h2>League Table</h2>
-  <table id="leagueTable">
-    <thead>
-      <tr><th>Team</th><th>MP</th><th>W</th><th>D</th><th>L</th><th>GF</th><th>GA</th><th>GD</th><th>Pts</th></tr>
-    </thead>
-    <tbody></tbody>
-  </table>
+<h2>Live Matches</h2>
+<div id="liveMatches"></div>
 
-  <h2>Matches</h2>
-  <div id="matchesContainer"></div>
+<h2>Next Fixtures</h2>
+<div id="nextFixtures"></div>
 
-  <h2>Semi-Finals</h2>
-  <div id="semiContainer"></div>
+<h2>League Table</h2>
+<table id="leagueTable">
+  <thead>
+    <tr><th>Team</th><th>MP</th><th>W</th><th>D</th><th>L</th><th>GF</th><th>GA</th><th>GD</th><th>Pts</th></tr>
+  </thead>
+  <tbody></tbody>
+</table>
 
-  <h2>Third Place</h2>
-  <div id="thirdContainer"></div>
+<h2>Semi-finals & Finals</h2>
+<div id="playoffs"></div>
 
-  <h2>Final</h2>
-  <div id="finalContainer"></div>
+<audio id="goalSound">
+  <source src="https://actions.google.com/sounds/v1/cartoon/clang_and_wobble.ogg" type="audio/ogg">
+</audio>
 </div>
 
 <script>
-// Load JSON
-let data = {};
-fetch("data.json")
-  .then(res=>res.json())
-  .then(json=>{ data=json; render(); })
-  .catch(err=>{ console.error("Failed to load data.json",err); });
+const DATA_URL = 'https://raw.githubusercontent.com/rowlandmayowa527-ai/pfl-livescore-center/main/data.json';
+let lastScores = {};
 
-// Render everything
-function render(){
-  renderLeagueTable();
-  renderMatches();
-  renderKnockouts();
+async function loadData(){
+  const res = await fetch(DATA_URL + `?t=${Date.now()}`);
+  const data = await res.json();
+  updatePlayoffsFromLeague(data);
+  renderLiveMatches(data);
+  renderNextFixtures(data);
+  renderLeagueTable(data);
+  renderPlayoffs(data);
 }
 
-// Calculate league table
-function renderLeagueTable(){
-  const teams = data.teams.map(t=>{
-    return {name:t, MP:0,W:0,D:0,L:0,GF:0,GA:0,GD:0,Pts:0};
+function renderLiveMatches(data){
+  const liveContainer = document.getElementById("liveMatches");
+  liveContainer.innerHTML="";
+  data.matchDays.forEach(day=>{
+    day.matches.filter(m=>m.live).forEach(m=>{
+      const card = document.createElement("div");
+      card.className="card live";
+      card.innerHTML=`
+        <div class="match-row">
+          <div class="team">${m.home}</div>
+          <div class="score">${m.homeScore} - ${m.awayScore}</div>
+          <div class="team">${m.away}</div>
+        </div>
+        <div style="margin-top:5px;">${m.venue} | ${m.time}</div>
+      `;
+      liveContainer.appendChild(card);
+
+      // Goal flash & sound
+      const prev = lastScores[m.id] || {home:0, away:0};
+      if(m.homeScore>prev.home || m.awayScore>prev.away){
+        card.classList.add("flash");
+        document.getElementById("goalSound").play().catch(()=>{});
+        setTimeout(()=>card.classList.remove("flash"),500);
+      }
+      lastScores[m.id]={home:m.homeScore,away:m.awayScore};
+    });
   });
+}
+
+function renderNextFixtures(data){
+  const nextContainer = document.getElementById("nextFixtures");
+  nextContainer.innerHTML="";
+  data.matchDays.forEach(day=>{
+    day.matches.filter(m=>!m.live).forEach(m=>{
+      const card = document.createElement("div");
+      card.className="card";
+      card.innerHTML=`
+        <div class="match-row">
+          <div class="team">${m.home}</div>
+          <div class="score">vs</div>
+          <div class="team">${m.away}</div>
+        </div>
+        <div style="margin-top:5px;">${m.venue} | ${m.time}</div>
+      `;
+      nextContainer.appendChild(card);
+    });
+  });
+}
+
+function renderLeagueTable(data){
+  const tbody=document.querySelector("#leagueTable tbody");
+  tbody.innerHTML="";
+  const table = {};
+  data.teams.forEach(t=>table[t]={MP:0,W:0,D:0,L:0,GF:0,GA:0,GD:0,Pts:0});
 
   data.matchDays.forEach(day=>{
     day.matches.forEach(m=>{
-      if(m.homeScore!==null && m.awayScore!==null){
-        const home = teams.find(t=>t.name===m.home);
-        const away = teams.find(t=>t.name===m.away);
-        home.MP++; away.MP++;
-        home.GF+=m.homeScore; home.GA+=m.awayScore;
-        away.GF+=m.awayScore; away.GA+=m.homeScore;
-        home.GD = home.GF-home.GA;
-        away.GD = away.GF-away.GA;
-        if(m.homeScore>m.awayScore){ home.W++; home.Pts+=3; away.L++; }
-        else if(m.homeScore<m.awayScore){ away.W++; away.Pts+=3; home.L++; }
-        else { home.D++; home.Pts+=1; away.D++; away.Pts+=1; }
-      }
+      if(m.homeScore==null||m.awayScore==null) return;
+      table[m.home].MP++; table[m.away].MP++;
+      table[m.home].GF += m.homeScore; table[m.home].GA += m.awayScore;
+      table[m.away].GF += m.awayScore; table[m.away].GA += m.homeScore;
+      table[m.home].GD = table[m.home].GF - table[m.home].GA;
+      table[m.away].GD = table[m.away].GF - table[m.away].GA;
+      if(m.homeScore>m.awayScore){ table[m.home].W++; table[m.home].Pts+=3; table[m.away].L++; }
+      else if(m.homeScore<m.awayScore){ table[m.away].W++; table[m.away].Pts+=3; table[m.home].L++; }
+      else { table[m.home].D++; table[m.away].D++; table[m.home].Pts+=1; table[m.away].Pts+=1; }
     });
   });
 
-  teams.sort((a,b)=>b.Pts-b.DG || b.GD-b.GD);
-
-  const tbody = document.querySelector("#leagueTable tbody");
-  tbody.innerHTML="";
-  teams.forEach(t=>{
-    const tr=document.createElement("tr");
-    tr.innerHTML=`<td>${t.name}</td><td>${t.MP}</td><td>${t.W}</td><td>${t.D}</td><td>${t.L}</td><td>${t.GF}</td><td>${t.GA}</td><td>${t.GD}</td><td>${t.Pts}</td>`;
-    tbody.appendChild(tr);
+  const sorted = Object.entries(table).sort((a,b)=>b[1].Pts - a[1].Pts || b[1].GD - a[1].GD || b[1].GF - a[1].GF);
+  sorted.forEach(([team, stats])=>{
+    const row=document.createElement("tr");
+    row.innerHTML=`<td>${team}</td><td>${stats.MP}</td><td>${stats.W}</td><td>${stats.D}</td><td>${stats.L}</td><td>${stats.GF}</td><td>${stats.GA}</td><td>${stats.GD}</td><td>${stats.Pts}</td>`;
+    tbody.appendChild(row);
   });
-
-  // Save top 4 for semi-finals
-  data.top4 = teams.slice(0,4).map(t=>t.name);
 }
 
-// Render match days
-function renderMatches(){
-  const container=document.getElementById("matchesContainer");
-  container.innerHTML="";
-  data.matchDays.forEach((day,i)=>{
-    const div=document.createElement("div");
-    div.className="card";
-    div.innerHTML=`<h3>Match Day ${i+1} - ${day.date}</h3>`;
+function updatePlayoffsFromLeague(data){
+  if(data.phase!=="League") return;
+
+  // Calculate top 4
+  const table = {};
+  data.teams.forEach(t=>table[t]={Pts:0,GD:0,GF:0,GA:0});
+  data.matchDays.forEach(day=>{
     day.matches.forEach(m=>{
-      const liveClass = m.live?"live":"";
-      div.innerHTML+=`<p class="${liveClass}">${m.home} ${m.homeScore!==null?m.homeScore:"-"} vs ${m.awayScore!==null?m.awayScore:"-"} ${m.away} | ${m.time} | ${m.venue}</p>`;
+      if(m.homeScore==null||m.awayScore==null) return;
+      table[m.home].GF += m.homeScore; table[m.home].GA += m.awayScore;
+      table[m.away].GF += m.awayScore; table[m.away].GA += m.homeScore;
+      table[m.home].GD = table[m.home].GF - table[m.home].GA;
+      table[m.away].GD = table[m.away].GF - table[m.away].GA;
+      if(m.homeScore>m.awayScore) table[m.home].Pts+=3;
+      else if(m.homeScore<m.awayScore) table[m.away].Pts+=3;
+      else { table[m.home].Pts+=1; table[m.away].Pts+=1; }
     });
-    container.appendChild(div);
+  });
+
+  const sorted = Object.entries(table).sort((a,b)=>b[1].Pts - a[1].Pts || b[1].GD - a[1].GD || b[1].GF - a[1].GF);
+  const top4 = sorted.slice(0,4).map(t=>t[0]);
+
+  // Semi-finals
+  data.semiFinals = [
+    {id:1, home: top4[0], away: top4[2], venue:"Mainbowl", time:"14:00", homeScore:0, awayScore:0, live:false},
+    {id:2, home: top4[1], away: top4[3], venue:"Maracana", time:"16:00", homeScore:0, awayScore:0, live:false}
+  ];
+
+  // Finals & Third-place if semi-finals played
+  const semi = data.semiFinals;
+  if(semi.every(m=>m.homeScore!=null && m.awayScore!=null)){
+    const winners = [];
+    const losers = [];
+    semi.forEach(m=>{
+      if(m.homeScore>m.awayScore){ winners.push(m.home); losers.push(m.away); }
+      else if(m.homeScore<m.awayScore){ winners.push(m.away); losers.push(m.home); }
+      else { winners.push(m.home); losers.push(m.away); }
+    });
+
+    data.finals = [
+      {id:1, home:winners[0], away:winners[1], venue:"Mainbowl", time:"18:00", homeScore:0, awayScore:0, live:false}
+    ];
+
+    data.thirdPlace = [
+      {id:1, home:losers[0], away:losers[1], venue:"Maracana", time:"18:00", homeScore:0, awayScore:0, live:false}
+    ];
+  }
+}
+
+function renderPlayoffs(data){
+  const container = document.getElementById("playoffs");
+  container.innerHTML="";
+  const phases=["semiFinals","finals","thirdPlace"];
+  phases.forEach(p=>{
+    if(data[p] && data[p].length>0){
+      const phaseDiv = document.createElement("div");
+      phaseDiv.innerHTML=`<h3>${p}</h3>`;
+      data[p].forEach(m=>{
+        const card=document.createElement("div");
+        card.className="card";
+        card.innerHTML=`
+          <div class="match-row">
+            <div class="team">${m.home}</div>
+            <div class="score">${m.homeScore} - ${m.awayScore}</div>
+            <div class="team">${m.away}</div>
+          </div>
+          <div style="margin-top:5px;">${m.venue} | ${m.time}</div>
+        `;
+        phaseDiv.appendChild(card);
+      });
+      container.appendChild(phaseDiv);
+    }
   });
 }
 
-// Render semi-finals, third, final
-function renderKnockouts(){
-  const semi=document.getElementById("semiContainer");
-  semi.innerHTML="";
-  if(data.semiFinals){
-    data.semiFinals.forEach((m,i)=>{
-      semi.innerHTML+=`<p>SF${i+1}: ${m.home??"-"} ${m.homeScore??"-"} vs ${m.away??"-"} ${m.awayScore??"-"} | ${m.venue} ${m.time??""}</p>`;
-    });
-  }
-  const third=document.getElementById("thirdContainer");
-  if(data.thirdPlace){
-    third.innerHTML=`<p>${data.thirdPlace.home??"-"} ${data.thirdPlace.homeScore??"-"} vs ${data.thirdPlace.away??"-"} ${data.thirdPlace.awayScore??"-"} | ${data.thirdPlace.venue} ${data.thirdPlace.time??""}</p>`;
-  }
-  const final=document.getElementById("finalContainer");
-  if(data.finals){
-    final.innerHTML=`<p>${data.finals.home??"-"} ${data.finals.homeScore??"-"} vs ${data.finals.away??"-"} ${data.finals.awayScore??"-"} | ${data.finals.venue} ${data.finals.time??""}</p>`;
-  }
-}
+loadData();
+setInterval(loadData,10000);
 </script>
 </body>
 </html>
-
