@@ -14,6 +14,385 @@
       "date": "2025-10-28",
       "matches": [
         {
+          "home": "Dark Art FC",
+          "away": "Shooting Stars",
+          "HT": {
+            "home": 1,
+            "away": 0
+          },
+          "FT": {
+            "home": 1,
+            "away": 2
+          },
+          "venue": "Mainbowl",
+          "time": "14:00"
+        },
+        {
+          "home": "Courage FC",
+          "away": "Infinity FC",
+          "HT": {
+            "home": 0,
+            "away": 3
+          },
+          "FT": {
+            "home": 1,
+            "away": 3
+          },
+          "venue": "Mainbowl",
+          "time": "15:00"
+        },
+        {
+          "home": "Team 8",
+          "away": "Dynamos FC",
+          "HT": {
+            "home": 0,
+            "away": 1
+          },
+          "FT": {
+            "home": 1,
+            "away": 1
+          },
+          "venue": "Mainbowl",
+          "time": "16:00"
+        },
+        {
+          "home": "Blue Blazzers",
+          "away": "FET 21/26",
+          "HT": {
+            "home": 0,
+            "away": 0
+          },
+          "FT": {
+            "home": 0,
+            "away": 0
+          },
+          "venue": "Mainbowl",
+          "time": "17:00"
+        }
+      ]
+    },
+    {
+      "date": "2025-11-01",
+      "matches": [
+        {
+          "home": null,
+          "away": null,
+          "HT": {
+            "home": 0,
+            "away": 0
+          },
+          "FT": {
+            "home": 0,
+            "away": 0
+          },
+          "venue": "Mainbowl",
+          "time": "14:00"
+        },
+        {
+          "home": null,
+          "away": null,
+          "HT": {
+            "home": 0,
+            "away": 0
+          },
+          "FT": {
+            "home": 0,
+            "away": 0
+          },
+          "venue": "Mainbowl",
+          "time": "15:00"
+        },
+        {
+          "home": null,
+          "away": null,
+          "HT": {
+            "home": 0,
+            "away": 0
+          },
+          "FT": {
+            "home": 0,
+            "away": 0
+          },
+          "venue": "Mainbowl",
+          "time": "16:00"
+        },
+        {
+          "home": null,
+          "away": null,
+          "HT": {
+            "home": 0,
+            "away": 0
+          },
+          "FT": {
+            "home": 0,
+            "away": 0
+          },
+          "venue": "Mainbowl",
+          "time": "17:00"
+        }
+      ]
+    },
+    {
+      "date": "2025-11-05",
+      "matches": [
+        {
+          "home": null,
+          "away": null,
+          "HT": {
+            "home": 0,
+            "away": 0
+          },
+          "FT": {
+            "home": 0,
+            "away": 0
+          },
+          "venue": "Mainbowl",
+          "time": "14:00"
+        },
+        {
+          "home": null,
+          "away": null,
+          "HT": {
+            "home": 0,
+            "away": 0
+          },
+          "FT": {
+            "home": 0,
+            "away": 0
+          },
+          "venue": "Mainbowl",
+          "time": "15:00"
+        },
+        {
+          "home": null,
+          "away": null,
+          "HT": {
+            "home": 0,
+            "away": 0
+          },
+          "FT": {
+            "home": 0,
+            "away": 0
+          },
+          "venue": "Mainbowl",
+          "time": "16:00"
+        },
+        {
+          "home": null,
+          "away": null,
+          "HT": {
+            "home": 0,
+            "away": 0
+          },
+          "FT": {
+            "home": 0,
+            "away": 0
+          },
+          "venue": "Mainbowl",
+          "time": "17:00"
+        }
+      ]
+    },
+    {
+      "date": "2025-11-09",
+      "matches": [
+        {
+          "home": null,
+          "away": null,
+          "HT": {
+            "home": 0,
+            "away": 0
+          },
+          "FT": {
+            "home": 0,
+            "away": 0
+          },
+          "venue": "Mainbowl",
+          "time": "14:00"
+        },
+        {
+          "home": null,
+          "away": null,
+          "HT": {
+            "home": 0,
+            "away": 0
+          },
+          "FT": {
+            "home": 0,
+            "away": 0
+          },
+          "venue": "Mainbowl",
+          "time": "15:00"
+        },
+        {
+          "home": null,
+          "away": null,
+          "HT": {
+            "home": 0,
+            "away": 0
+          },
+          "FT": {
+            "home": 0,
+            "away": 0
+          },
+          "venue": "Mainbowl",
+          "time": "16:00"
+        },
+        {
+          "home": null,
+          "away": null,
+          "HT": {
+            "home": 0,
+            "away": 0
+          },
+          "FT": {
+            "home": 0,
+            "away": 0
+          },
+          "venue": "Mainbowl",
+          "time": "17:00"
+        }
+      ]
+    },
+    {
+      "date": "2025-11-13",
+      "matches": [
+        {
+          "home": null,
+          "away": null,
+          "HT": {
+            "home": 0,
+            "away": 0
+          },
+          "FT": {
+            "home": 0,
+            "away": 0
+          },
+          "venue": "Mainbowl",
+          "time": "14:00"
+        },
+        {
+          "home": null,
+          "away": null,
+          "HT": {
+            "home": 0,
+            "away": 0
+          },
+          "FT": {
+            "home": 0,
+            "away": 0
+          },
+          "venue": "Mainbowl",
+          "time": "15:00"
+        },
+        {
+          "home": null,
+          "away": null,
+          "HT": {
+            "home": 0,
+            "away": 0
+          },
+          "FT": {
+            "home": 0,
+            "away": 0
+          },
+          "venue": "Mainbowl",
+          "time": "16:00"
+        },
+        {
+          "home": null,
+          "away": null,
+          "HT": {
+            "home": 0,
+            "away": 0
+          },
+          "FT": {
+            "home": 0,
+            "away": 0
+          },
+          "venue": "Mainbowl",
+          "time": "17:00"
+        }
+      ]
+    },
+    {
+      "date": "2025-11-17",
+      "matches": [
+        {
+          "home": null,
+          "away": null,
+          "HT": {
+            "home": 0,
+            "away": 0
+          },
+          "FT": {
+            "home": 0,
+            "away": 0
+          },
+          "venue": "Mainbowl",
+          "time": "14:00"
+        },
+        {
+          "home": null,
+          "away": null,
+          "HT": {
+            "home": 0,
+            "away": 0
+          },
+          "FT": {
+            "home": 0,
+            "away": 0
+          },
+          "venue": "Mainbowl",
+          "time": "15:00"
+        },
+        {
+          "home": null,
+          "away": null,
+          "HT": {
+            "home": 0,
+            "away": 0
+          },
+          "FT": {
+            "home": 0,
+            "away": 0
+          },
+          "venue": "Mainbowl",
+          "time": "16:00"
+        },
+        {
+          "home": null,
+          "away": null,
+          "HT": {
+            "home": 0,
+            "away": 0
+          },
+          "FT": {
+            "home": 0,
+            "away": 0
+          },
+          "venue": "Mainbowl",
+          "time": "17:00"
+        }
+      ]
+    }
+  ]
+}
+  "teams": [
+    "Blue Blazzers",
+    "Dark Art FC",
+    "Shooting Stars",
+    "Infinity FC",
+    "Courage FC",
+    "Dynamos FC",
+    "FET 21/26",
+    "Team 8"
+  ],
+  "matchDays": [
+    {
+      "date": "2025-10-28",
+      "matches": [
+        {
           "home": "Courage FC",
           "away": "Dark Art FC",
           "homeScore": 2,
