@@ -3,10 +3,10 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>PFL Admin Panel (Offline)</title>
+<title>PFL Admin Panel</title>
 <style>
-body { margin:0; font-family: Arial, sans-serif; background:#111; color:#fff; }
-header { background: gold; color:black; text-align:center; font-weight:bold; padding:15px;}
+body { font-family: Arial,sans-serif; margin:0; background:#111; color:#fff; }
+header { background:gold; color:black; text-align:center; font-weight:bold; padding:15px;}
 .container {padding:10px; max-width:1200px; margin:auto;}
 .card {background:#222; border:1px solid gold; border-radius:8px; padding:10px; margin-bottom:10px;}
 label {display:block; margin-top:5px;}
@@ -16,7 +16,7 @@ h2 {margin-top:20px;}
 </style>
 </head>
 <body>
-<header>PFL Admin Panel (Offline)</header>
+<header>PFL Admin Panel</header>
 <div class="container">
 <div id="loginDiv">
   <h2>Admin Login</h2>
@@ -26,7 +26,7 @@ h2 {margin-top:20px;}
 </div>
 
 <div id="adminDiv" style="display:none;">
-  <h2>Update Matches</h2>
+  <h2>Manage Matches</h2>
   <label>Select Match Day:</label>
   <select id="matchDaySelect"></select>
 
@@ -37,7 +37,7 @@ h2 {margin-top:20px;}
 </div>
 
 <script>
-// ----- Config -----
+// ----- Admin Config -----
 const ADMIN_PASS = "Rowland12#";
 let data = { teams: [], matchDays: [] };
 
@@ -53,7 +53,6 @@ function login(){
 
 // ----- Load JSON -----
 function loadData(){
-  // Load from local data.json file if exists
   fetch("data.json")
     .then(res=>res.json())
     .then(json=>{
@@ -62,7 +61,6 @@ function loadData(){
     })
     .catch(err=>{
       alert("No local data.json found, starting fresh");
-      // Create default structure if empty
       data = {
         teams:["Blue Blazzers","Dark Art FC","Shooting Stars","Infinity FC","Courage FC","Dynamos FC","FET 21/26","Team 8"],
         matchDays:[
@@ -78,13 +76,13 @@ function loadData(){
     });
 }
 
-// ----- Helper: Create empty matches -----
+// ----- Create Empty Matches -----
 function createEmptyMatches(){
   return [
-    {home:null,away:null,homeScore:null,awayScore:null,venue:"Mainbowl",time:"14:00",live:false},
-    {home:null,away:null,homeScore:null,awayScore:null,venue:"Mainbowl",time:"15:00",live:false},
-    {home:null,away:null,homeScore:null,awayScore:null,venue:"Mainbowl",time:"16:00",live:false},
-    {home:null,away:null,homeScore:null,awayScore:null,venue:"Mainbowl",time:"17:00",live:false}
+    {home:null,away:null,HT:{home:0,away:0},FT:{home:0,away:0},venue:"Mainbowl",time:"14:00"},
+    {home:null,away:null,HT:{home:0,away:0},FT:{home:0,away:0},venue:"Mainbowl",time:"15:00"},
+    {home:null,away:null,HT:{home:0,away:0},FT:{home:0,away:0},venue:"Mainbowl",time:"16:00"},
+    {home:null,away:null,HT:{home:0,away:0},FT:{home:0,away:0},venue:"Mainbowl",time:"17:00"}
   ];
 }
 
@@ -118,11 +116,13 @@ function renderMatches(){
       <label>Away Team:</label>
       <select id="away-${i}">${data.teams.map(t=>`<option value="${t}" ${t===m.away?'selected':''}>${t}</option>`)}</select>
 
-      <label>Home Score:</label>
-      <input type="number" min="0" max="6" value="${m.homeScore!==null?m.homeScore:0}" id="hs-${i}">
+      <label>HT Score:</label>
+      <input type="number" min="0" max="6" value="${m.HT.home}" id="ht-home-${i}" placeholder="Home HT">
+      <input type="number" min="0" max="6" value="${m.HT.away}" id="ht-away-${i}" placeholder="Away HT">
 
-      <label>Away Score:</label>
-      <input type="number" min="0" max="6" value="${m.awayScore!==null?m.awayScore:0}" id="as-${i}">
+      <label>FT Score:</label>
+      <input type="number" min="0" max="6" value="${m.FT.home}" id="ft-home-${i}" placeholder="Home FT">
+      <input type="number" min="0" max="6" value="${m.FT.away}" id="ft-away-${i}" placeholder="Away FT">
 
       <label>Venue:</label>
       <select id="venue-${i}">
@@ -132,15 +132,17 @@ function renderMatches(){
 
       <label>Time:</label>
       <input type="time" value="${m.time}" id="time-${i}">
-
-      <label>Live:</label>
-      <select id="live-${i}">
-        <option value="true" ${m.live?'selected':''}>Yes</option>
-        <option value="false" ${!m.live?'selected':''}>No</option>
-      </select>
     `;
     container.appendChild(card);
   });
+
+  // Allow editing Match Day date
+  const dayDate = document.createElement("input");
+  dayDate.type="date";
+  dayDate.value=matchDay.date;
+  dayDate.onchange = e=>{ matchDay.date = e.target.value; };
+  container.prepend(document.createTextNode("Match Day Date:"));
+  container.prepend(dayDate);
 }
 
 // ----- Save Locally -----
@@ -150,11 +152,12 @@ function saveData(){
   matchDay.matches.forEach((m,i)=>{
     m.home = document.getElementById(`home-${i}`).value;
     m.away = document.getElementById(`away-${i}`).value;
-    m.homeScore = parseInt(document.getElementById(`hs-${i}`).value);
-    m.awayScore = parseInt(document.getElementById(`as-${i}`).value);
+    m.HT.home = parseInt(document.getElementById(`ht-home-${i}`).value);
+    m.HT.away = parseInt(document.getElementById(`ht-away-${i}`).value);
+    m.FT.home = parseInt(document.getElementById(`ft-home-${i}`).value);
+    m.FT.away = parseInt(document.getElementById(`ft-away-${i}`).value);
     m.venue = document.getElementById(`venue-${i}`).value;
     m.time = document.getElementById(`time-${i}`).value;
-    m.live = document.getElementById(`live-${i}`).value==="true";
   });
   alert("Data saved locally! Click 'Download JSON' to update file.");
 }
