@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>PFL Admin Panel</title>
+<title>PFL Admin Panel (Offline)</title>
 <style>
 body { margin:0; font-family: Arial, sans-serif; background:#111; color:#fff; }
 header { background: gold; color:black; text-align:center; font-weight:bold; padding:15px;}
@@ -16,7 +16,7 @@ h2 {margin-top:20px;}
 </style>
 </head>
 <body>
-<header>PFL Admin Panel</header>
+<header>PFL Admin Panel (Offline)</header>
 <div class="container">
 <div id="loginDiv">
   <h2>Admin Login</h2>
@@ -31,18 +31,17 @@ h2 {margin-top:20px;}
   <select id="matchDaySelect"></select>
 
   <div id="matchesContainer"></div>
-  <button onclick="saveData()">Save Updates</button>
+  <button onclick="saveData()">Save Locally</button>
+  <button onclick="downloadData()">Download JSON</button>
 </div>
 </div>
 
 <script>
+// ----- Config -----
 const ADMIN_PASS = "Rowland12#";
-const GITHUB_REPO = "rowlandmayowa527-ai/pfl-livescore-center";
-const DATA_FILE = "data.json";
-const GITHUB_PAT = "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"; // Replace with your PAT
+let data = { teams: [], matchDays: [] };
 
-let data = {};
-
+// ----- Login -----
 function login(){
   const pass = document.getElementById("adminPassword").value;
   if(pass===ADMIN_PASS){
@@ -52,17 +51,44 @@ function login(){
   } else { alert("Incorrect password"); }
 }
 
-async function loadData(){
-  try {
-    const res = await fetch(`https://raw.githubusercontent.com/${GITHUB_REPO}/main/${DATA_FILE}?t=${Date.now()}`);
-    data = await res.json();
-    populateMatchDays();
-  } catch(e){
-    alert("Failed to load data.json from GitHub");
-    console.error(e);
-  }
+// ----- Load JSON -----
+function loadData(){
+  // Load from local data.json file if exists
+  fetch("data.json")
+    .then(res=>res.json())
+    .then(json=>{
+      data=json;
+      populateMatchDays();
+    })
+    .catch(err=>{
+      alert("No local data.json found, starting fresh");
+      // Create default structure if empty
+      data = {
+        teams:["Blue Blazzers","Dark Art FC","Shooting Stars","Infinity FC","Courage FC","Dynamos FC","FET 21/26","Team 8"],
+        matchDays:[
+          {date:"2025-10-28",matches:createEmptyMatches()},
+          {date:"2025-11-01",matches:createEmptyMatches()},
+          {date:"2025-11-05",matches:createEmptyMatches()},
+          {date:"2025-11-09",matches:createEmptyMatches()},
+          {date:"2025-11-13",matches:createEmptyMatches()},
+          {date:"2025-11-17",matches:createEmptyMatches()}
+        ]
+      };
+      populateMatchDays();
+    });
 }
 
+// ----- Helper: Create empty matches -----
+function createEmptyMatches(){
+  return [
+    {home:null,away:null,homeScore:null,awayScore:null,venue:"Mainbowl",time:"14:00",live:false},
+    {home:null,away:null,homeScore:null,awayScore:null,venue:"Mainbowl",time:"15:00",live:false},
+    {home:null,away:null,homeScore:null,awayScore:null,venue:"Mainbowl",time:"16:00",live:false},
+    {home:null,away:null,homeScore:null,awayScore:null,venue:"Mainbowl",time:"17:00",live:false}
+  ];
+}
+
+// ----- Populate Match Days -----
 function populateMatchDays(){
   const select = document.getElementById("matchDaySelect");
   select.innerHTML="";
@@ -76,6 +102,7 @@ function populateMatchDays(){
   renderMatches();
 }
 
+// ----- Render Matches -----
 function renderMatches(){
   const idx = document.getElementById("matchDaySelect").value;
   const container = document.getElementById("matchesContainer");
@@ -116,7 +143,8 @@ function renderMatches(){
   });
 }
 
-async function saveData(){
+// ----- Save Locally -----
+function saveData(){
   const idx = document.getElementById("matchDaySelect").value;
   const matchDay = data.matchDays[idx];
   matchDay.matches.forEach((m,i)=>{
@@ -128,43 +156,18 @@ async function saveData(){
     m.time = document.getElementById(`time-${i}`).value;
     m.live = document.getElementById(`live-${i}`).value==="true";
   });
+  alert("Data saved locally! Click 'Download JSON' to update file.");
+}
 
-  try {
-    // Convert JSON to Base64
-    const content = btoa(unescape(encodeURIComponent(JSON.stringify(data,null,2))));
-
-    // Get latest SHA
-    const shaRes = await fetch(`https://api.github.com/repos/${GITHUB_REPO}/contents/${DATA_FILE}`,{
-      headers: { "Authorization": `token ${GITHUB_PAT}` }
-    });
-    const shaData = await shaRes.json();
-    const sha = shaData.sha;
-
-    // PUT request to update
-    const res = await fetch(`https://api.github.com/repos/${GITHUB_REPO}/contents/${DATA_FILE}`,{
-      method:"PUT",
-      headers:{
-        "Authorization": `token ${GITHUB_PAT}`,
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({
-        message: "Update via Admin Panel",
-        content,
-        sha
-      })
-    });
-
-    if(res.ok){ alert("Data updated successfully!"); loadData(); }
-    else { 
-      const err = await res.json();
-      console.error(err);
-      alert("Update failed! Check console for details.");
-    }
-
-  } catch(e){
-    console.error(e);
-    alert("Update failed! Check console for details.");
-  }
+// ----- Download JSON -----
+function downloadData(){
+  const blob = new Blob([JSON.stringify(data,null,2)], {type:"application/json"});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href=url;
+  a.download="data.json";
+  a.click();
+  URL.revokeObjectURL(url);
 }
 </script>
 </body>
