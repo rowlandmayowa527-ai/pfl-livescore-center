@@ -1,18 +1,74 @@
 {
-  "phase": "League",
-  "teams": ["Blue Blazzers","Dark Art FC","Shooting Stars","Infinity FC","Courage FC","Dynamos FC","FET 21/26","TBD"],
+  "teams": [
+    "Blue Blazzers",
+    "Dark Art FC",
+    "Shooting Stars",
+    "Infinity FC",
+    "Courage FC",
+    "Dynamos FC",
+    "FET 21/26",
+    "Team 8"
+  ],
   "matchDays": [
     {
-      "day": 1,
+      "date": "2025-10-28",
       "matches": [
-        {"id":1, "home":"Blue Blazzers", "away":"Dark Art FC", "venue":"Mainbowl", "time":"14:00", "homeScore":0, "awayScore":0, "live":false},
-        {"id":2, "home":"Infinity FC", "away":"Dynamos FC", "venue":"Mainbowl", "time":"15:00", "homeScore":0, "awayScore":0, "live":false},
-        {"id":3, "home":"Shooting Stars", "away":"FET 21/26", "venue":"Mainbowl", "time":"16:00", "homeScore":0, "awayScore":0, "live":false},
-        {"id":4, "home":"Courage FC", "away":"TBD", "venue":"Mainbowl", "time":"17:00", "homeScore":0, "awayScore":0, "live":false}
+        {"home":"Blue Blazzers","away":"Dark Art FC","homeScore":null,"awayScore":null,"venue":"Mainbowl","time":"14:00","live":false},
+        {"home":"Infinity FC","away":"Dynamos FC","homeScore":null,"awayScore":null,"venue":"Mainbowl","time":"15:00","live":false},
+        {"home":"Shooting Stars","away":"FET 21/26","homeScore":null,"awayScore":null,"venue":"Mainbowl","time":"16:00","live":false},
+        {"home":"Courage FC","away":"Team 8","homeScore":null,"awayScore":null,"venue":"Mainbowl","time":"17:00","live":false}
+      ]
+    },
+    {
+      "date": "2025-11-01",
+      "matches": [
+        {"home":"Dark Art FC","away":"Infinity FC","homeScore":null,"awayScore":null,"venue":"Mainbowl","time":"14:00","live":false},
+        {"home":"Blue Blazzers","away":"Courage FC","homeScore":null,"awayScore":null,"venue":"Mainbowl","time":"15:00","live":false},
+        {"home":"Dynamos FC","away":"Shooting Stars","homeScore":null,"awayScore":null,"venue":"Mainbowl","time":"16:00","live":false},
+        {"home":"FET 21/26","away":"Team 8","homeScore":null,"awayScore":null,"venue":"Mainbowl","time":"17:00","live":false}
+      ]
+    },
+    {
+      "date": "2025-11-05",
+      "matches": [
+        {"home":"Blue Blazzers","away":"Infinity FC","homeScore":null,"awayScore":null,"venue":"Mainbowl","time":"14:00","live":false},
+        {"home":"Dark Art FC","away":"Courage FC","homeScore":null,"awayScore":null,"venue":"Mainbowl","time":"15:00","live":false},
+        {"home":"Shooting Stars","away":"Team 8","homeScore":null,"awayScore":null,"venue":"Mainbowl","time":"16:00","live":false},
+        {"home":"Dynamos FC","away":"FET 21/26","homeScore":null,"awayScore":null,"venue":"Mainbowl","time":"17:00","live":false}
+      ]
+    },
+    {
+      "date": "2025-11-09",
+      "matches": [
+        {"home":"Courage FC","away":"Shooting Stars","homeScore":null,"awayScore":null,"venue":"Mainbowl","time":"14:00","live":false},
+        {"home":"Blue Blazzers","away":"Dynamos FC","homeScore":null,"awayScore":null,"venue":"Mainbowl","time":"15:00","live":false},
+        {"home":"Infinity FC","away":"FET 21/26","homeScore":null,"awayScore":null,"venue":"Mainbowl","time":"16:00","live":false},
+        {"home":"Dark Art FC","away":"Team 8","homeScore":null,"awayScore":null,"venue":"Mainbowl","time":"17:00","live":false}
+      ]
+    },
+    {
+      "date": "2025-11-13",
+      "matches": [
+        {"home":"Blue Blazzers","away":"FET 21/26","homeScore":null,"awayScore":null,"venue":"Mainbowl","time":"14:00","live":false},
+        {"home":"Dark Art FC","away":"Shooting Stars","homeScore":null,"awayScore":null,"venue":"Mainbowl","time":"15:00","live":false},
+        {"home":"Infinity FC","away":"Courage FC","homeScore":null,"awayScore":null,"venue":"Mainbowl","time":"16:00","live":false},
+        {"home":"Dynamos FC","away":"Team 8","homeScore":null,"awayScore":null,"venue":"Mainbowl","time":"17:00","live":false}
+      ]
+    },
+    {
+      "date": "2025-11-17",
+      "matches": [
+        {"home":"Blue Blazzers","away":"Courage FC","homeScore":null,"awayScore":null,"venue":"Mainbowl","time":"14:00","live":false},
+        {"home":"Dark Art FC","away":"Dynamos FC","homeScore":null,"awayScore":null,"venue":"Mainbowl","time":"15:00","live":false},
+        {"home":"Infinity FC","away":"Shooting Stars","homeScore":null,"awayScore":null,"venue":"Mainbowl","time":"16:00","live":false},
+        {"home":"FET 21/26","away":"Team 8","homeScore":null,"awayScore":null,"venue":"Mainbowl","time":"17:00","live":false}
       ]
     }
   ],
-  "semiFinals": [],
-  "finals": [],
-  "thirdPlace": []
+  "semiFinals": [
+    {"home":null,"away":null,"homeScore":null,"awayScore":null,"venue":"Mainbowl","time":null,"live":false},
+    {"home":null,"away":null,"homeScore":null,"awayScore":null,"venue":"Mainbowl","time":null,"live":false}
+  ],
+  "finals": {"home":null,"away":null,"homeScore":null,"awayScore":null,"venue":"Mainbowl","time":null,"live":false},
+  "thirdPlace": {"home":null,"away":null,"homeScore":null,"awayScore":null,"venue":"Mainbowl","time":null,"live":false}
 }
