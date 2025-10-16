@@ -62,22 +62,22 @@ function renderLeagueTable(){
 
   data.matchDays.forEach(day=>{
     day.matches.forEach(m=>{
-      if(m.homeScore!==null && m.awayScore!==null){
+      if(m.FT.home!==null && m.FT.away!==null){
         const home = teams.find(t=>t.name===m.home);
         const away = teams.find(t=>t.name===m.away);
         home.MP++; away.MP++;
-        home.GF+=m.homeScore; home.GA+=m.awayScore;
-        away.GF+=m.awayScore; away.GA+=m.homeScore;
+        home.GF+=m.FT.home; home.GA+=m.FT.away;
+        away.GF+=m.FT.away; away.GA+=m.FT.home;
         home.GD = home.GF-home.GA;
         away.GD = away.GF-away.GA;
-        if(m.homeScore>m.awayScore){ home.W++; home.Pts+=3; away.L++; }
-        else if(m.homeScore<m.awayScore){ away.W++; away.Pts+=3; home.L++; }
+        if(m.FT.home>m.FT.away){ home.W++; home.Pts+=3; away.L++; }
+        else if(m.FT.home<m.FT.away){ away.W++; away.Pts+=3; home.L++; }
         else { home.D++; home.Pts+=1; away.D++; away.Pts+=1; }
       }
     });
   });
 
-  teams.sort((a,b)=>b.Pts-b.DG || b.GD-b.GD);
+  teams.sort((a,b)=>b.Pts-a.Pts || b.GD-a.GD);
 
   const tbody = document.querySelector("#leagueTable tbody");
   tbody.innerHTML="";
@@ -87,7 +87,6 @@ function renderLeagueTable(){
     tbody.appendChild(tr);
   });
 
-  // Save top 4 for semi-finals
   data.top4 = teams.slice(0,4).map(t=>t.name);
 }
 
@@ -101,7 +100,10 @@ function renderMatches(){
     div.innerHTML=`<h3>Match Day ${i+1} - ${day.date}</h3>`;
     day.matches.forEach(m=>{
       const liveClass = m.live?"live":"";
-      div.innerHTML+=`<p class="${liveClass}">${m.home} ${m.homeScore!==null?m.homeScore:"-"} vs ${m.awayScore!==null?m.awayScore:"-"} ${m.away} | ${m.time} | ${m.venue}</p>`;
+      div.innerHTML+=`
+        <p class="${liveClass}">
+          ${m.home} HT:${m.HT.home}-${m.HT.away} FT:${m.FT.home}-${m.FT.away} vs ${m.away} | ${m.time} | ${m.venue}
+        </p>`;
     });
     container.appendChild(div);
   });
@@ -113,16 +115,16 @@ function renderKnockouts(){
   semi.innerHTML="";
   if(data.semiFinals){
     data.semiFinals.forEach((m,i)=>{
-      semi.innerHTML+=`<p>SF${i+1}: ${m.home??"-"} ${m.homeScore??"-"} vs ${m.away??"-"} ${m.awayScore??"-"} | ${m.venue} ${m.time??""}</p>`;
+      semi.innerHTML+=`<p>SF${i+1}: ${m.home??"-"} ${m.FT?.home??"-"} vs ${m.away??"-"} ${m.FT?.away??"-"} | ${m.venue} ${m.time??""}</p>`;
     });
   }
   const third=document.getElementById("thirdContainer");
   if(data.thirdPlace){
-    third.innerHTML=`<p>${data.thirdPlace.home??"-"} ${data.thirdPlace.homeScore??"-"} vs ${data.thirdPlace.away??"-"} ${data.thirdPlace.awayScore??"-"} | ${data.thirdPlace.venue} ${data.thirdPlace.time??""}</p>`;
+    third.innerHTML=`<p>${data.thirdPlace.home??"-"} ${data.thirdPlace.FT?.home??"-"} vs ${data.thirdPlace.away??"-"} ${data.thirdPlace.FT?.away??"-"} | ${data.thirdPlace.venue} ${data.thirdPlace.time??""}</p>`;
   }
   const final=document.getElementById("finalContainer");
   if(data.finals){
-    final.innerHTML=`<p>${data.finals.home??"-"} ${data.finals.homeScore??"-"} vs ${data.finals.away??"-"} ${data.finals.awayScore??"-"} | ${data.finals.venue} ${data.finals.time??""}</p>`;
+    final.innerHTML=`<p>${data.finals.home??"-"} ${data.finals.FT?.home??"-"} vs ${data.finals.away??"-"} ${data.finals.FT?.away??"-"} | ${data.finals.venue} ${data.finals.time??""}</p>`;
   }
 }
 </script>
