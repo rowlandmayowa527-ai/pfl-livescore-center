@@ -39,7 +39,7 @@ h2 {margin-top:20px;}
 const ADMIN_PASS = "Rowland12#";
 const GITHUB_REPO = "rowlandmayowa527-ai/pfl-livescore-center";
 const DATA_FILE = "data.json";
-const GITHUB_PAT = "YOUR_PERSONAL_ACCESS_TOKEN"; // replace with your own PAT
+const GITHUB_PAT = "YOUR_PERSONAL_ACCESS_TOKEN"; // Replace with your PAT
 
 let data = {};
 
@@ -53,9 +53,14 @@ function login(){
 }
 
 async function loadData(){
-  const res = await fetch(`https://raw.githubusercontent.com/${GITHUB_REPO}/main/${DATA_FILE}?t=${Date.now()}`);
-  data = await res.json();
-  populateMatchDays();
+  try {
+    const res = await fetch(`https://raw.githubusercontent.com/${GITHUB_REPO}/main/${DATA_FILE}?t=${Date.now()}`);
+    data = await res.json();
+    populateMatchDays();
+  } catch(e){
+    alert("Failed to load data.json from GitHub");
+    console.error(e);
+  }
 }
 
 function populateMatchDays(){
@@ -124,27 +129,42 @@ async function saveData(){
     m.live = document.getElementById(`live-${i}`).value==="true";
   });
 
-  // Push to GitHub
-  const content = btoa(unescape(encodeURIComponent(JSON.stringify(data,null,2))));
-  const shaRes = await fetch(`https://api.github.com/repos/${GITHUB_REPO}/contents/${DATA_FILE}`);
-  const shaData = await shaRes.json();
-  const sha = shaData.sha;
+  try {
+    // Convert JSON to Base64
+    const content = btoa(unescape(encodeURIComponent(JSON.stringify(data,null,2))));
 
-  const res = await fetch(`https://api.github.com/repos/${GITHUB_REPO}/contents/${DATA_FILE}`,{
-    method:"PUT",
-    headers:{
-      "Authorization": `token ${GITHUB_PAT}`,
-      "Content-Type": "application/json"
-    },
-    body: JSON.stringify({
-      message: "Update via Admin Panel",
-      content,
-      sha
-    })
-  });
+    // Get latest SHA
+    const shaRes = await fetch(`https://api.github.com/repos/${GITHUB_REPO}/contents/${DATA_FILE}`,{
+      headers: { "Authorization": `token ${GITHUB_PAT}` }
+    });
+    const shaData = await shaRes.json();
+    const sha = shaData.sha;
 
-  if(res.ok){ alert("Data updated successfully!"); loadData(); }
-  else alert("Update failed!");
+    // PUT request to update
+    const res = await fetch(`https://api.github.com/repos/${GITHUB_REPO}/contents/${DATA_FILE}`,{
+      method:"PUT",
+      headers:{
+        "Authorization": `token ${GITHUB_PAT}`,
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        message: "Update via Admin Panel",
+        content,
+        sha
+      })
+    });
+
+    if(res.ok){ alert("Data updated successfully!"); loadData(); }
+    else { 
+      const err = await res.json();
+      console.error(err);
+      alert("Update failed! Check console for details.");
+    }
+
+  } catch(e){
+    console.error(e);
+    alert("Update failed! Check console for details.");
+  }
 }
 </script>
 </body>
